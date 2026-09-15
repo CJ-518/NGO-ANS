@@ -16,7 +16,7 @@ Este repositorio contiene el prototipo funcional de sistema de gestión de servi
 ---
 
 ## Nota Importante sobre el Prototipo y la Base de Datos
-Al tratarse de un prototipo local, **este sistema no funcionará automáticamente en otra computadora** si se clona tal cual. El archivo de configuración (`src/main/resources/application.properties`) contiene la contraseña de PostgreSQL específica de la máquina donde fue creado. Para ejecutarlo en otro equipo, cada integrante deberá configurar su propio usuario y contraseña de base de datos en dicho archivo.
+Al tratarse de un prototipo local, **este sistema no funcionará automáticamente en otra computadora** si se clona tal cual. El archivo de configuración contiene las credenciales de PostgreSQL específicas de la máquina donde fue creado. Para ejecutarlo en otro equipo, cada integrante deberá configurar su propio usuario y contraseña de base de datos en dicho archivo.
 
 ---
 
@@ -28,20 +28,20 @@ Para levantar este proyecto en tu computadora, sigue los siguientes pasos:
 * Tener instalado Java JDK 21 (o superior).
 * Tener instalado PostgreSQL y crear una base de datos local llamada exactamente `ngo_saeca`.
 
-### 2. Configurar la Base de Datos
-Abre el archivo `src/main/resources/application.properties` y modifica el usuario y la contraseña de PostgreSQL para que coincidan con las credenciales locales de tu propia computadora. Asegúrate de ejecutar el script SQL provisto en la documentación para crear las tablas requeridas.
+### 2. Configurar la Base de Datos y Credenciales
+* **Estructura de la Base de Datos:** En este repositorio encontrarás el esquema de la base de datos exportado en formato plano SQL dentro de la ruta `db/ngo_ans.sql`. Importa este archivo en tu base de datos local `ngo_saeca` usando tu herramienta preferida (pgAdmin o terminal).
+* **Configurar Credenciales:** Abre el archivo de configuración ubicado exactamente en la ruta `src/main/resources/application.properties` y modifica los valores de usuario y contraseña de PostgreSQL (`spring.datasource.username` y `spring.datasource.password`) para que coincidan con las credenciales locales de tu propia computadora.
 
 ### 3. Ejecutar la Aplicación
-Abre una terminal (PowerShell o CMD) en la carpeta raíz del proyecto y ejecuta el comando correspondiente:
+Abre una terminal (PowerShell o CMD) en la carpeta raíz del proyecto y ejecuta el comando correspondiente según tu sistema operativo:
 
 * **En Windows (PowerShell):**
   ```powershell
   .\mvnw.cmd spring-boot:run
-
 * **En Linux / Mac:**
-```bash
-./mvnw spring-boot:run
-```
+  ```bash
+  ./mvnw spring-boot:run
+  ```
 
 
 
