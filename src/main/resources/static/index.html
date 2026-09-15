@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NGO SAECA - Panel Principal</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header>
+        <div class="logo">NGO SAECA</div>
+        <div class="user-role">Gestión de garantías y servicio técnico</div>
+    </header>
+
+    <main>
+        <!-- Header con los botones -->
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <h1>Panel Principal</h1>
+            <div>
+                <a href="seguimiento.html" class="btn-primary" style="background-color: #4a5568; margin-right: 10px; text-decoration: none;">Portal del Cliente</a>
+                <a href="nueva-solicitud.html" class="btn-primary" style="text-decoration: none;">Nueva solicitud</a>
+            </div>
+        </div>
+        
+        <div class="dashboard-cards">
+            <div class="card">
+                <h2>Solicitudes abiertas</h2>
+                <p id="total-abiertas">0</p>
+            </div>
+        </div>
+
+        <h2>Solicitudes recientes</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Número</th>
+                    <th>Cliente</th>
+                    <th>Producto</th>
+                    <th>Estado</th>
+                    <th>Fecha</th>
+                </tr>
+            </thead>
+            <tbody id="solicitudes-body">
+                <!-- JavaScript will inject the rows here -->
+            </tbody>
+        </table>
+    </main>
+
+    <script src="app.js"></script>
+</body>
+</html>
