@@ -16,7 +16,9 @@ Este repositorio contiene el prototipo funcional de sistema de gestión de servi
 ---
 
 ## Nota Importante sobre el Prototipo y la Base de Datos
-Al tratarse de un prototipo local, **este sistema no funcionará automáticamente en otra computadora** si se clona tal cual. Cada integrante debe tener su propia base de datos PostgreSQL local llamada `ngo_saeca`. Las credenciales ya no se editan manualmente en el archivo de configuración: el script `iniciar.ps1` las solicita de forma interactiva al arrancar el sistema (ver sección siguiente).
+Al tratarse de un prototipo local, **este sistema no funcionará automáticamente en otra computadora** si se clona tal cual. Cada integrante debe tener su propia base de datos PostgreSQL local llamada `ngo_saeca`.
+
+Las credenciales no se editan dentro de `src/main/resources/application.properties`. La aplicación lee dos variables de entorno (`DB_USER` y `DB_PASSWORD`), y el script `iniciar.ps1` las solicita de forma interactiva al arrancar el sistema (ver sección siguiente). Esto evita que se compartan credenciales en archivos del proyecto.
 
 ---
 
@@ -43,7 +45,23 @@ El proyecto cuenta con un script de inicio automático en PowerShell que te soli
 
 El sistema arrancará de forma silenciosa y abrirá automáticamente tu navegador web en [http://localhost:8080](http://localhost:8080). Para detener el servidor, simplemente presiona `Ctrl + C` en la terminal.
 
-> **Alternativa manual (sin script):** si preferís no usar `iniciar.ps1`, también podés levantar la aplicación directamente con Maven — en Windows: `.\mvnw.cmd spring-boot:run`; en Linux/Mac: `./mvnw spring-boot:run`. En ese caso deberás configurar manualmente `spring.datasource.username` y `spring.datasource.password` en `src/main/resources/application.properties`.
+> **Alternativa manual (sin script):** si preferís no usar `iniciar.ps1`, también podés levantar la aplicación directamente con Maven y definir las variables de entorno antes de iniciar.
+>
+> En Windows (PowerShell):
+> ```powershell
+> $env:DB_USER = "postgres"
+> $env:DB_PASSWORD = "tu_contrasena"
+> .\mvnw.cmd spring-boot:run
+> ```
+>
+> En Linux/Mac:
+> ```bash
+> export DB_USER="postgres"
+> export DB_PASSWORD="tu_contrasena"
+> ./mvnw spring-boot:run
+> ```
+>
+> En este caso no se editan los valores de `spring.datasource.username` ni `spring.datasource.password` dentro de `application.properties`; simplemente se pasan como variables de entorno.
 
 ### 4. Probar el Sistema
 
