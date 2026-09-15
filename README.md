@@ -26,14 +26,29 @@ Las credenciales no se editan dentro de `src/main/resources/application.properti
 
 Para levantar este proyecto en tu computadora de forma automática, sigue los siguientes pasos:
 
-### 1. Requisitos Previos
+### 1. Clonar el Repositorio
+
+Antes de comenzar, cloná el repositorio en tu computadora local:
+
+```bash
+git clone https://github.com/CJ-518/NGO-ANS.git
+cd NGO-ANS
+```
+
+> Si preferís usar SSH en lugar de HTTPS:
+>
+> ```bash
+> git clone git@github.com:CJ-518/NGO-ANS.git
+> ```
+
+### 2. Requisitos Previos
 * Tener instalado Java JDK 21 (o superior).
 * Tener instalado PostgreSQL y crear una base de datos local llamada exactamente `ngo_saeca`.
 
-### 2. Configurar la Base de Datos
+### 3. Configurar la Base de Datos
 * **Estructura:** Importa el esquema SQL ubicado en la ruta `db/ngo_ans.sql` dentro de tu base de datos local `ngo_saeca` usando pgAdmin o tu terminal preferida.
 
-### 3. Ejecutar el Sistema (Script Interactivo)
+### 4. Ejecutar el Sistema (Script Interactivo)
 El proyecto cuenta con un script de inicio automático en PowerShell que te solicitará tus credenciales locales de forma segura y abrirá el navegador por ti.
 
 1. Abre **PowerShell** en la carpeta raíz del proyecto.
@@ -63,7 +78,7 @@ El sistema arrancará de forma silenciosa y abrirá automáticamente tu navegado
 >
 > En este caso no se editan los valores de `spring.datasource.username` ni `spring.datasource.password` dentro de `application.properties`; simplemente se pasan como variables de entorno.
 
-### 4. Probar el Sistema
+### 5. Probar el Sistema
 
 Una vez que la terminal indique que la aplicación ha iniciado, abre tu navegador web e ingresa a:
 
