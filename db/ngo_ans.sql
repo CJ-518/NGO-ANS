@@ -2,12 +2,12 @@
 -- PostgreSQL database dump
 --
 
-\restrict DGNS7fD7qehmre3BumJUWpGeapTDK4r6ZVIWI20V62zbdl7AFvUfl9LhC8U35sN
+\restrict aORmJ0BLFhz4yr4pK3ykMLtVa1Y0Eb11GcAniBqgmaq2COT0GrsXVgiKiffH7Vt
 
 -- Dumped from database version 18.6
 -- Dumped by pg_dump version 18.6
 
--- Started on 2026-09-19 00:37:29
+-- Started on 2026-09-19 15:00:23
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -498,6 +498,8 @@ COPY public.cliente (id_cliente, nombre, documento, telefono, correo) FROM stdin
 8	Carlos Benítez	3567890	+595982234567	carlos.benitez@example.com
 9	Ana Duarte	5012345	0983345678	ana.duarte@example.com
 10	Luis Soto	4111222	0994856271	soto@gmail.com
+11	Carlos Portal	48700	0991932726	portal@gmail.com
+12	Juan Perez	6000111	0962728645	juan@gmail.com
 \.
 
 
@@ -708,6 +710,9 @@ COPY public.producto (id_producto, marca, modelo, nro_serie, tipo_producto) FROM
 --
 
 COPY public.rol (id_rol, nombre, descripcion) FROM stdin;
+1	ADMINISTRADOR	Acceso total: elimina solicitudes, administra usuarios y roles
+2	FUNCIONARIO	Personal de NGO SAECA: registra clientes/solicitudes, asigna técnicos
+3	TECNICO	Servicio técnico autorizado: registra diagnóstico y cambia estados
 \.
 
 
@@ -738,7 +743,9 @@ COPY public.servicio_autorizado (id_servicio, nombre, ciudad, estado) FROM stdin
 --
 
 COPY public.solicitud (id_solicitud, id_cliente, id_producto, fecha, descripcion, estado_actual, id_garantia) FROM stdin;
-5	10	13	2026-09-19 00:16:57.840646	No carga	RECIBIDA	4
+6	11	29	2026-09-19 00:40:35.13283	Puerta rota	FINALIZADA	67
+5	10	13	2026-09-19 00:16:57.840646	No carga	ASIGNADA	4
+7	12	52	2026-09-19 14:29:51.194351	Exploto	ASIGNADA	41
 \.
 
 
@@ -749,6 +756,9 @@ COPY public.solicitud (id_solicitud, id_cliente, id_producto, fecha, descripcion
 --
 
 COPY public.usuario (id_usuario, id_rol, id_servicio, nombre, correo, clave, estado) FROM stdin;
+1	1	\N	Administrador Prueba	admin@ngosaeca.com.py	$2b$10$6AQbd.y2DZqc9SpI.IlTgeKMZsTMrvATD0UXfl46wVDiiIgiKRCWC	ACTIVO
+2	2	\N	Funcionario Prueba	funcionario@ngosaeca.com.py	$2b$10$VQ7b.UWEvdcGTnZ9AhnjeOKCZFsLuzKAYHrLmW5WoByP.JeSxIqKq	ACTIVO
+3	3	\N	Tecnico Prueba	tecnico@ngosaeca.com.py	$2b$10$DYIXKUvFECLaJ5nbV9c4Fu1Gj3IVmEpqyzEfQlvGuZjW1O5OrD9oS	ACTIVO
 \.
 
 
@@ -767,7 +777,7 @@ SELECT pg_catalog.setval('public.asignacion_id_asignacion_seq', 1, false);
 -- Name: cliente_id_cliente_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.cliente_id_cliente_seq', 10, true);
+SELECT pg_catalog.setval('public.cliente_id_cliente_seq', 12, true);
 
 
 --
@@ -794,7 +804,7 @@ SELECT pg_catalog.setval('public.producto_id_producto_seq', 90, true);
 -- Name: rol_id_rol_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.rol_id_rol_seq', 1, false);
+SELECT pg_catalog.setval('public.rol_id_rol_seq', 3, true);
 
 
 --
@@ -821,7 +831,7 @@ SELECT pg_catalog.setval('public.servicio_autorizado_id_servicio_seq', 1, false)
 -- Name: solicitud_id_solicitud_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.solicitud_id_solicitud_seq', 5, true);
+SELECT pg_catalog.setval('public.solicitud_id_solicitud_seq', 7, true);
 
 
 --
@@ -830,7 +840,7 @@ SELECT pg_catalog.setval('public.solicitud_id_solicitud_seq', 5, true);
 -- Name: usuario_id_usuario_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.usuario_id_usuario_seq', 1, false);
+SELECT pg_catalog.setval('public.usuario_id_usuario_seq', 3, true);
 
 
 --
@@ -1031,11 +1041,11 @@ ALTER TABLE ONLY public.usuario
     ADD CONSTRAINT usuario_id_servicio_fkey FOREIGN KEY (id_servicio) REFERENCES public.servicio_autorizado(id_servicio);
 
 
--- Completed on 2026-09-19 00:37:29
+-- Completed on 2026-09-19 15:00:23
 
 --
 -- PostgreSQL database dump complete
 --
 
-\unrestrict DGNS7fD7qehmre3BumJUWpGeapTDK4r6ZVIWI20V62zbdl7AFvUfl9LhC8U35sN
+\unrestrict aORmJ0BLFhz4yr4pK3ykMLtVa1Y0Eb11GcAniBqgmaq2COT0GrsXVgiKiffH7Vt
 
