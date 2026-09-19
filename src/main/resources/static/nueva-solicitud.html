@@ -45,24 +45,35 @@
             <!-- Datos del Producto -->
             <div class="card form-section">
                 <h2>Datos del producto</h2>
+                <p style="color: #4a5568; margin-top: 0;">
+                    Escribí en cualquier campo para ver sugerencias de los productos registrados.
+                    Al elegir uno, se completan los demás datos.
+                </p>
                 <div class="form-grid">
                     <div>
-                        <label>Número de serie</label>
-                        <input type="text" id="nroSerie" required>
+                        <label>Tipo de producto</label>
+                        <input type="text" id="tipoProducto" list="lista-tipoProducto" autocomplete="off" required>
+                        <datalist id="lista-tipoProducto"></datalist>
                     </div>
                     <div>
                         <label>Marca</label>
-                        <input type="text" id="marca" required>
+                        <input type="text" id="marca" list="lista-marca" autocomplete="off" required>
+                        <datalist id="lista-marca"></datalist>
                     </div>
                     <div>
                         <label>Modelo</label>
-                        <input type="text" id="modelo" required>
+                        <input type="text" id="modelo" list="lista-modelo" autocomplete="off" required>
+                        <datalist id="lista-modelo"></datalist>
                     </div>
                     <div>
-                        <label>Tipo de producto</label>
-                        <input type="text" id="tipoProducto" required>
+                        <label>Número de serie</label>
+                        <input type="text" id="nroSerie" list="lista-nroSerie" autocomplete="off" required>
+                        <datalist id="lista-nroSerie"></datalist>
                     </div>
                 </div>
+
+                <!-- Producto elegido y estado de su garantía (lo completa nueva-solicitud.js) -->
+                <div id="info-producto" style="display: none; margin-top: 20px; padding: 12px 15px; border: 1px solid #cbd5e0; border-radius: 4px; background-color: #f7fafc;"></div>
             </div>
 
             <!-- Descripción del problema -->

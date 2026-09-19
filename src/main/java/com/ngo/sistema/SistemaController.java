@@ -19,6 +19,9 @@ public class SistemaController {
     @Autowired
     private SolicitudRepository solicitudRepo;
 
+    @Autowired
+    private GarantiaRepository garantiaRepo;
+
     @PostMapping("/clientes")
     public Cliente crearCliente(@RequestBody Cliente cliente) {
         return clienteRepo.save(cliente);
@@ -29,8 +32,27 @@ public class SistemaController {
         return productoRepo.save(producto);
     }
 
+    @GetMapping("/productos")
+    public List<Producto> listarProductos() {
+        return productoRepo.findAll();
+    }
+
+    @GetMapping("/productos/{id}/garantia")
+    public ResponseEntity<Garantia> obtenerGarantiaDeProducto(@PathVariable Long id) {
+        return garantiaRepo.findFirstByProductoIdProductoOrderByFechaFinDesc(id)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
+    }
+
     @PostMapping("/solicitudes")
     public Solicitud crearSolicitud(@RequestBody Solicitud solicitud) {
+        // Si no se indicó una garantía, se enlaza la del producto (si la tiene)
+        if (solicitud.getGarantia() == null
+                && solicitud.getProducto() != null
+                && solicitud.getProducto().getIdProducto() != null) {
+            garantiaRepo.findFirstByProductoIdProductoOrderByFechaFinDesc(solicitud.getProducto().getIdProducto())
+                    .ifPresent(solicitud::setGarantia);
+        }
         return solicitudRepo.save(solicitud);
     }
 
