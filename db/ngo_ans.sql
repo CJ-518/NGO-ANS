@@ -2,12 +2,12 @@
 -- PostgreSQL database dump
 --
 
-\restrict vfjIIb93aycyW4mWVDfXuz8IujEJqouMsyJcTXqIypOLmnH1BS4MSe9XbnScsYW
+\restrict DGNS7fD7qehmre3BumJUWpGeapTDK4r6ZVIWI20V62zbdl7AFvUfl9LhC8U35sN
 
 -- Dumped from database version 18.6
 -- Dumped by pg_dump version 18.6
 
--- Started on 2026-09-19 00:22:18
+-- Started on 2026-09-19 00:37:29
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -519,6 +519,85 @@ COPY public.garantia (id_garantia, id_cliente, id_producto, fecha_inicio, fecha_
 9	7	14	2026-09-10	2027-09-10	VIGENTE
 10	6	9	2026-01-15	2028-01-15	VIGENTE
 11	9	7	2025-11-20	2027-11-20	VIGENTE
+12	1	20	2026-03-03	2027-03-03	VIGENTE
+13	3	82	2025-10-20	2026-10-20	VIGENTE
+14	6	25	2025-08-30	2026-08-30	VENCIDA
+15	7	26	2025-07-24	2026-07-24	VENCIDA
+16	8	27	2025-06-17	2026-06-17	VENCIDA
+17	10	39	2025-09-21	2026-09-21	VIGENTE
+18	8	17	2026-06-22	2027-06-22	VIGENTE
+19	7	66	2025-12-11	2026-12-11	VIGENTE
+20	10	89	2026-07-28	2027-07-28	VIGENTE
+21	4	33	2026-05-01	2027-05-01	VIGENTE
+22	8	57	2025-05-18	2026-05-18	VENCIDA
+23	2	31	2026-07-14	2027-07-14	VIGENTE
+24	5	34	2026-03-25	2027-03-25	VIGENTE
+25	9	18	2026-05-16	2027-05-16	VIGENTE
+26	5	64	2026-02-23	2027-02-23	VIGENTE
+27	2	71	2025-06-09	2026-06-09	VENCIDA
+28	3	2	2026-07-07	2027-07-07	VIGENTE
+29	3	72	2025-05-03	2026-05-03	VENCIDA
+30	8	47	2026-05-23	2027-05-23	VIGENTE
+31	7	46	2026-06-29	2027-06-29	VIGENTE
+32	4	83	2025-09-13	2026-09-13	VENCIDA
+33	6	15	2026-09-04	2027-09-04	VIGENTE
+34	8	77	2026-04-23	2027-04-23	VIGENTE
+35	4	73	2026-09-18	2027-09-18	VIGENTE
+36	7	56	2025-06-24	2026-06-24	VENCIDA
+37	1	40	2025-08-15	2026-08-15	VENCIDA
+38	2	21	2026-01-25	2027-01-25	VIGENTE
+39	10	19	2026-04-09	2027-04-09	VIGENTE
+40	6	65	2026-01-17	2027-01-17	VIGENTE
+41	3	52	2025-11-19	2026-11-19	VIGENTE
+42	8	37	2025-12-04	2026-12-04	VIGENTE
+43	6	85	2025-07-01	2026-07-01	VENCIDA
+44	3	32	2026-06-07	2027-06-07	VIGENTE
+45	9	78	2026-03-17	2027-03-17	VIGENTE
+46	5	24	2025-10-06	2026-10-06	VIGENTE
+47	6	55	2025-07-31	2026-07-31	VENCIDA
+48	9	68	2025-09-28	2026-09-28	VIGENTE
+49	9	38	2025-10-28	2026-10-28	VIGENTE
+50	1	80	2026-01-02	2027-01-02	VIGENTE
+51	9	48	2026-04-16	2027-04-16	VIGENTE
+52	9	28	2025-05-11	2026-05-11	VENCIDA
+53	1	30	2026-08-20	2027-08-20	VIGENTE
+54	3	62	2026-05-08	2027-05-08	VIGENTE
+55	8	67	2025-11-04	2026-11-04	VIGENTE
+56	1	50	2026-02-01	2027-02-01	VIGENTE
+57	2	51	2025-12-26	2026-12-26	VIGENTE
+58	7	76	2026-05-30	2027-05-30	VIGENTE
+59	10	69	2025-08-22	2026-08-22	VENCIDA
+60	2	81	2025-11-26	2026-11-26	VIGENTE
+61	10	79	2026-02-08	2027-02-08	VIGENTE
+62	3	42	2025-06-02	2026-06-02	VENCIDA
+63	1	90	2026-06-21	2027-06-21	VIGENTE
+64	10	59	2026-08-27	2027-08-27	VIGENTE
+65	5	84	2025-08-07	2026-08-07	VENCIDA
+66	5	74	2026-08-12	2027-08-12	VIGENTE
+67	10	29	2025-04-04	2026-04-04	VENCIDA
+68	2	41	2025-07-09	2026-07-09	VENCIDA
+69	7	16	2026-07-29	2027-07-29	VIGENTE
+70	5	54	2025-09-06	2026-09-06	VENCIDA
+71	7	36	2026-01-10	2027-01-10	VIGENTE
+72	5	4	2026-04-24	2027-04-24	VIGENTE
+73	4	53	2025-10-13	2026-10-13	VIGENTE
+74	4	23	2025-11-12	2026-11-12	VIGENTE
+75	5	44	2026-09-11	2027-09-11	VIGENTE
+76	9	58	2025-04-11	2026-04-11	VENCIDA
+77	7	86	2025-05-25	2026-05-25	VENCIDA
+78	10	49	2026-03-10	2027-03-10	VIGENTE
+79	3	22	2025-12-19	2026-12-19	VIGENTE
+80	1	70	2025-07-16	2026-07-16	VENCIDA
+81	6	45	2026-08-05	2027-08-05	VIGENTE
+82	1	60	2026-07-21	2027-07-21	VIGENTE
+83	6	75	2026-07-06	2027-07-06	VIGENTE
+84	4	43	2025-04-26	2026-04-26	VENCIDA
+85	4	3	2026-05-31	2027-05-31	VIGENTE
+86	2	61	2026-06-14	2027-06-14	VIGENTE
+87	8	87	2025-04-18	2026-04-18	VENCIDA
+88	6	35	2026-02-16	2027-02-16	VIGENTE
+89	4	63	2026-04-01	2027-04-01	VIGENTE
+90	9	88	2026-09-03	2027-09-03	VIGENTE
 \.
 
 
@@ -543,6 +622,82 @@ COPY public.producto (id_producto, marca, modelo, nro_serie, tipo_producto) FROM
 12	Samsung	Galaxy A54	SN-CE-0001	Celular
 13	Lenovo	IdeaPad 3 15	SN-NB-0001	Notebook
 14	Philips	Airfryer XL	SN-FR-0001	Freidora de aire
+15	Samsung	Crystal UHD 65	SN-TV-0003	Televisor
+16	Samsung	QLED Q60C 50	SN-TV-0004	Televisor
+17	LG	NanoCell NANO77 50	SN-TV-0005	Televisor
+18	LG	OLED C3 55	SN-TV-0006	Televisor
+19	TCL	P735 43	SN-TV-0007	Televisor
+20	TCL	C645 55	SN-TV-0008	Televisor
+21	Hisense	A6K 50	SN-TV-0009	Televisor
+22	Philips	PUD7406 43	SN-TV-0010	Televisor
+23	Tokyo	Smart HD 32	SN-TV-0011	Televisor
+24	Aiwa	AW32B4SM 32	SN-TV-0012	Televisor
+25	Whirlpool	Frost Free 430L	SN-HE-0003	Heladera
+26	Samsung	Side by Side 617L	SN-HE-0004	Heladera
+27	LG	Door in Door 601L	SN-HE-0005	Heladera
+28	Electrolux	Frost Free 390L	SN-HE-0006	Heladera
+29	Consul	Cycle Defrost 340L	SN-HE-0007	Heladera
+30	Midea	MDRB380 295L	SN-HE-0008	Heladera
+31	Patrick	HPK151M 320L	SN-HE-0009	Heladera
+32	Midea	Inverter 9000 BTU	SN-AA-0003	Aire acondicionado
+33	Midea	Inverter 18000 BTU	SN-AA-0004	Aire acondicionado
+34	LG	Dual Inverter 12000 BTU	SN-AA-0005	Aire acondicionado
+35	Samsung	WindFree 12000 BTU	SN-AA-0006	Aire acondicionado
+36	Gree	Amber 9000 BTU	SN-AA-0007	Aire acondicionado
+37	Tokyo	Split 18000 BTU	SN-AA-0008	Aire acondicionado
+38	Electrolux	Ecoturbo 24000 BTU	SN-AA-0009	Aire acondicionado
+39	NGO	Climatizador A2	SN-CL-0002	Equipo de climatizacion
+40	NGO	Climatizador B1	SN-CL-0003	Equipo de climatizacion
+41	Electrolux	EcoWash 8kg	SN-LA-0002	Lavarropas
+42	Samsung	EcoBubble 11kg	SN-LA-0003	Lavarropas
+43	LG	TurboWash 13kg	SN-LA-0004	Lavarropas
+44	Whirlpool	Carga Superior 12kg	SN-LA-0005	Lavarropas
+45	Consul	Facilite 11kg	SN-LA-0006	Lavarropas
+46	Midea	Autoportante 9kg	SN-LA-0007	Lavarropas
+47	Whirlpool	Secarropas 10kg	SN-SE-0001	Secarropas
+48	Electrolux	Secarropas 8kg	SN-SE-0002	Secarropas
+49	Samsung	Lavavajillas 12 cubiertos	SN-LV-0001	Lavavajillas
+50	Midea	Lavavajillas 14 cubiertos	SN-LV-0002	Lavavajillas
+51	Samsung	Galaxy A34	SN-CE-0002	Celular
+52	Samsung	Galaxy S23	SN-CE-0003	Celular
+53	Xiaomi	Redmi Note 13	SN-CE-0004	Celular
+54	Xiaomi	Poco X6 Pro	SN-CE-0005	Celular
+55	Motorola	Moto G84	SN-CE-0006	Celular
+56	Motorola	Edge 40	SN-CE-0007	Celular
+57	Apple	iPhone 13	SN-CE-0008	Celular
+58	Samsung	Galaxy Tab A9	SN-TB-0001	Tablet
+59	Lenovo	Tab M10 Plus	SN-TB-0002	Tablet
+60	Lenovo	IdeaPad Slim 3 14	SN-NB-0002	Notebook
+61	HP	Pavilion 15	SN-NB-0003	Notebook
+62	Dell	Inspiron 15 3520	SN-NB-0004	Notebook
+63	Acer	Aspire 5 A515	SN-NB-0005	Notebook
+64	Asus	VivoBook 15 X1504	SN-NB-0006	Notebook
+65	Samsung	Monitor Odyssey 24	SN-MN-0001	Monitor
+66	LG	Monitor UltraGear 27	SN-MN-0002	Monitor
+67	AOC	Monitor 22B2H	SN-MN-0003	Monitor
+68	HP	DeskJet Ink 2374	SN-IM-0001	Impresora
+69	Epson	EcoTank L3250	SN-IM-0002	Impresora
+70	Brother	DCP-T520W	SN-IM-0003	Impresora
+71	Philips	Airfryer 3000 Series	SN-FR-0002	Freidora de aire
+72	Midea	Air Fryer 5L	SN-FR-0003	Freidora de aire
+73	Oster	Air Fryer Digital 4L	SN-FR-0004	Freidora de aire
+74	Samsung	Microondas 32L	SN-MO-0001	Microondas
+75	LG	Microondas NeoChef 30L	SN-MO-0002	Microondas
+76	Electrolux	Microondas 20L	SN-MO-0003	Microondas
+77	Whirlpool	Cocina 4 hornallas	SN-CO-0001	Cocina
+78	Consul	Cocina 5 hornallas	SN-CO-0002	Cocina
+79	Tokyo	Horno eléctrico 45L	SN-HO-0001	Horno eléctrico
+80	Oster	Horno eléctrico 22L	SN-HO-0002	Horno eléctrico
+81	Oster	Licuadora Reversible	SN-LI-0001	Licuadora
+82	Philips	Licuadora ProBlend 3	SN-LI-0002	Licuadora
+83	Black+Decker	Batidora de mano 5 vel	SN-BA-0001	Batidora
+84	Tokyo	Calefón 80L	SN-CA-0001	Calefón
+85	Rheem	Termotanque 50L	SN-CA-0002	Termotanque
+86	Liliana	Ventilador de pie 20"	SN-VE-0001	Ventilador
+87	Tokyo	Ventilador de techo	SN-VE-0002	Ventilador
+88	Philips	Plancha a vapor 2400W	SN-PL-0001	Plancha
+89	JBL	Parlante PartyBox 110	SN-PA-0001	Parlante
+90	Sony	Barra de sonido HT-S400	SN-PA-0002	Barra de sonido
 \.
 
 
@@ -621,7 +776,7 @@ SELECT pg_catalog.setval('public.cliente_id_cliente_seq', 10, true);
 -- Name: garantia_id_garantia_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.garantia_id_garantia_seq', 11, true);
+SELECT pg_catalog.setval('public.garantia_id_garantia_seq', 90, true);
 
 
 --
@@ -630,7 +785,7 @@ SELECT pg_catalog.setval('public.garantia_id_garantia_seq', 11, true);
 -- Name: producto_id_producto_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.producto_id_producto_seq', 14, true);
+SELECT pg_catalog.setval('public.producto_id_producto_seq', 90, true);
 
 
 --
@@ -876,11 +1031,11 @@ ALTER TABLE ONLY public.usuario
     ADD CONSTRAINT usuario_id_servicio_fkey FOREIGN KEY (id_servicio) REFERENCES public.servicio_autorizado(id_servicio);
 
 
--- Completed on 2026-09-19 00:22:18
+-- Completed on 2026-09-19 00:37:29
 
 --
 -- PostgreSQL database dump complete
 --
 
-\unrestrict vfjIIb93aycyW4mWVDfXuz8IujEJqouMsyJcTXqIypOLmnH1BS4MSe9XbnScsYW
+\unrestrict DGNS7fD7qehmre3BumJUWpGeapTDK4r6ZVIWI20V62zbdl7AFvUfl9LhC8U35sN
 
