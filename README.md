@@ -1,16 +1,26 @@
-# Sistema de Gestión de Garantías y Servicio Técnico - NGO SAECA
+# Sistema de Gestión de Garantías y Servicio Técnico — NGO SAECA
 
-Prototipo funcional de un sistema de gestión de servicio técnico y garantías desarrollado para NGO SAECA, como parte del proyecto de análisis de sistemas.
+Prototipo funcional de un sistema de gestión de servicio técnico y garantías desarrollado para **NGO SAECA**, como parte del proyecto de Análisis de Sistemas.
 
-## Características Principales
+La aplicación es un backend **Spring Boot** que expone una API REST y sirve un frontend estático (HTML, CSS y JavaScript nativo) sobre una base de datos **PostgreSQL**.
 
-* **Panel Principal (`index.html`):**
-  * Listado de solicitudes con número, cliente, documento, producto, estado y fecha.
-  * **Búsqueda por número de documento del cliente:** filtra la tabla mientras se escribe (coincidencia parcial, solo números).
-  * **Actualización de estado en tiempo real:** cada solicitud tiene un selector de estado que se guarda directamente en la base de datos.
-  * **Detalle de solicitud:** al hacer click en una fila se abre una ventana con el estado actual, una línea de tiempo visual del trámite y los datos del cliente, el producto y el problema reportado.
-  * **Eliminación de solicitudes:** botón *Eliminar* por fila, con confirmación previa.
-* **Registro de Solicitudes (`nueva-solicitud.html`):** formulario para dar de alta un cliente, un producto y su solicitud técnica de forma enlazada.
+---
+
+## Características principales
+
+- **Panel principal (`index.html`)**
+  - Listado de solicitudes recientes con número, cliente, documento, producto, estado y fecha.
+  - Contador de solicitudes abiertas.
+  - Cambio de estado en línea desde un selector, con persistencia inmediata en la base de datos.
+  - Búsqueda de solicitudes por número de documento del cliente.
+  - Eliminación de solicitudes (borra en cascada sus asignaciones y su seguimiento).
+- **Detalle y seguimiento (modal del panel)**
+  - Al hacer clic en una fila se abre el detalle de la solicitud con una **línea de tiempo visual**: Recibida → Asignada → Diagnóstico → Finalizada.
+  - Muestra cliente, producto, problema reportado y última actualización.
+- **Registro de solicitudes (`nueva-solicitud.html`)**
+  - Alta enlazada de cliente, producto y solicitud técnica en un solo formulario.
+  - Validación de documento (solo dígitos) y teléfono (dígitos con `+` opcional), tanto en el formulario como en la base de datos.
+  - Al seleccionar un producto se consulta automáticamente su garantía vigente y se asocia a la solicitud.
 
 ### Estados de una solicitud
 
@@ -18,157 +28,158 @@ Prototipo funcional de un sistema de gestión de servicio técnico y garantías 
 
 Toda solicitud nueva se crea en estado `RECIBIDA`.
 
-### Eliminación de solicitudes
+---
 
-Al eliminar una solicitud también se eliminan sus **asignaciones** y su **historial de seguimiento**, ya que dependen de ella. El cliente, el producto y la garantía asociados **no** se eliminan. La acción no se puede deshacer.
+## Tecnologías utilizadas
 
-## Tecnologías Utilizadas
+| Capa | Tecnología |
+| --- | --- |
+| Backend | Java 21, Spring Boot 4.1.1 (Spring Web MVC, Spring Data JPA, Validation) |
+| Base de datos | PostgreSQL |
+| Frontend | HTML5, CSS3, JavaScript nativo (Fetch API) |
+| Construcción | Apache Maven (con wrapper `mvnw` / `mvnw.cmd`) |
 
-- **Backend:** Java 21, Spring Boot 4.1.1 (Spring Data JPA, Spring Web MVC, Validation).
-- **Base de Datos:** PostgreSQL, con validación estricta de documentos y números de teléfono.
-- **Frontend:** HTML5, CSS3 y JavaScript nativo (Fetch API).
-- **Construcción:** Apache Maven (incluye Maven Wrapper).
+---
 
-## Estructura del Proyecto
+## Estructura del proyecto
 
 ```
 NGO-ANS/
 ├── db/
-│   └── ngo_ans.sql                  # Esquema de la base de datos (y datos iniciales)
-├── src/main/
-│   ├── java/com/ngo/sistema/
-│   │   ├── SistemaApplication.java  # Punto de entrada de Spring Boot
-│   │   ├── SistemaController.java   # API REST (/api/...)
-│   │   ├── *Repository.java         # Acceso a datos (Cliente, Producto, Solicitud)
-│   │   └── *.java                   # Entidades JPA (Cliente, Producto, Solicitud, Garantia,
-│   │                                #   Asignacion, Seguimiento, Usuario, Rol, ServicioAutorizado)
-│   └── resources/
-│       ├── application.properties   # Configuración (lee DB_USER y DB_PASSWORD del entorno)
-│       └── static/
-│           ├── index.html, app.js               # Panel Principal
-│           ├── nueva-solicitud.html, .js        # Registro de solicitudes
-│           └── style.css                        # Estilos
-├── iniciar.ps1                      # Script de inicio interactivo (Windows / PowerShell)
-├── mvnw, mvnw.cmd                   # Maven Wrapper
+│   └── ngo_ans.sql                  # Volcado del esquema + datos de ejemplo
+├── src/main/java/com/ngo/sistema/
+│   ├── SistemaApplication.java      # Punto de entrada
+│   ├── SistemaController.java       # API REST (/api)
+│   ├── Cliente.java, Producto.java, Solicitud.java, Garantia.java,
+│   │   Usuario.java, Rol.java, Asignacion.java, Seguimiento.java,
+│   │   ServicioAutorizado.java      # Entidades JPA
+│   └── *Repository.java             # Repositorios Spring Data
+├── src/main/resources/
+│   ├── application.properties       # Conexión a la BD vía variables de entorno
+│   └── static/                      # index.html, nueva-solicitud.html, app.js,
+│                                    # nueva-solicitud.js, style.css
+├── iniciar.ps1                      # Script de arranque interactivo (Windows)
 └── pom.xml
 ```
 
-## API REST
+### Modelo de datos
 
-Todas las rutas cuelgan de `/api` y trabajan con JSON.
-
-| Método | Ruta | Descripción |
-| ------ | ---- | ----------- |
-| `POST` | `/api/clientes` | Crea un cliente. |
-| `POST` | `/api/productos` | Crea un producto. |
-| `POST` | `/api/solicitudes` | Crea una solicitud (enlazada a un cliente y un producto existentes). |
-| `GET` | `/api/solicitudes` | Lista todas las solicitudes. |
-| `GET` | `/api/solicitudes/buscar?documento=123` | Lista las solicitudes cuyo cliente tenga un documento que contenga el valor indicado, de la más reciente a la más antigua. Sin valor devuelve todas. |
-| `GET` | `/api/solicitudes/{id}` | Devuelve una solicitud por su número. |
-| `PUT` | `/api/solicitudes/{id}/estado` | Actualiza el estado. Cuerpo: `{"estado": "ASIGNADA"}` |
-| `DELETE` | `/api/solicitudes/{id}` | Elimina una solicitud (y sus asignaciones y seguimientos). Devuelve `204`, o `404` si no existe. |
-
-### Validaciones
-
-- **Documento del cliente:** solo números.
-- **Teléfono del cliente:** solo números, con un signo `+` opcional al inicio.
-- **Número de serie del producto:** único; no se puede registrar dos veces el mismo.
-
-## Modelo de Datos
-
-La base de datos incluye las tablas `cliente`, `producto`, `garantia`, `solicitud`, `asignacion`, `seguimiento`, `usuario`, `rol` y `servicio_autorizado`.
-
-La interfaz actual trabaja con `cliente`, `producto` y `solicitud`. Las demás tablas ya existen en el esquema y como entidades, pero todavía no tienen pantallas ni endpoints propios.
+Tablas: `cliente`, `producto`, `garantia`, `solicitud`, `seguimiento`, `asignacion`, `usuario`, `rol` y `servicio_autorizado`.
 
 ---
 
-## Nota Importante sobre el Prototipo y la Base de Datos
+## API REST
+
+Todos los endpoints cuelgan de `/api`.
+
+| Método | Ruta | Descripción |
+| --- | --- | --- |
+| `POST` | `/api/clientes` | Registra un cliente |
+| `POST` | `/api/productos` | Registra un producto |
+| `GET` | `/api/productos` | Lista los productos |
+| `GET` | `/api/productos/{id}/garantia` | Devuelve la garantía más reciente del producto (`404` si no tiene) |
+| `POST` | `/api/solicitudes` | Crea una solicitud (enlaza la garantía del producto si no se indica) |
+| `GET` | `/api/solicitudes` | Lista todas las solicitudes |
+| `GET` | `/api/solicitudes/buscar?documento=` | Busca solicitudes por documento del cliente |
+| `GET` | `/api/solicitudes/{id}` | Obtiene el detalle de una solicitud |
+| `PUT` | `/api/solicitudes/{id}/estado` | Actualiza el estado; cuerpo: `{ "estado": "ASIGNADA" }` |
+| `DELETE` | `/api/solicitudes/{id}` | Elimina la solicitud y sus registros relacionados |
+
+---
+
+## Nota importante sobre el prototipo y la base de datos
 
 Al tratarse de un prototipo local, **este sistema no funcionará automáticamente en otra computadora** si se clona tal cual. Cada integrante debe tener su propia base de datos PostgreSQL local llamada `ngo_saeca`.
 
-Las credenciales no se editan dentro de `src/main/resources/application.properties`. La aplicación lee dos variables de entorno (`DB_USER` y `DB_PASSWORD`), y el script `iniciar.ps1` las solicita de forma interactiva al arrancar el sistema (ver sección siguiente). Esto evita que se compartan credenciales en archivos del proyecto.
+Las credenciales **no se escriben** dentro de `src/main/resources/application.properties`. La aplicación lee dos variables de entorno (`DB_USER` y `DB_PASSWORD`) y el script `iniciar.ps1` las solicita de forma interactiva al arrancar. Así se evita compartir credenciales en archivos del proyecto.
 
 ---
 
-## Instrucciones para Ejecutar el Proyecto Localmente
+## Instrucciones para ejecutar el proyecto localmente
 
-### 1. Clonar el Repositorio
+### 1. Clonar el repositorio
 
-```
+```bash
 git clone https://github.com/CJ-518/NGO-ANS.git
 cd NGO-ANS
 ```
-> Si preferís usar SSH en lugar de HTTPS:
+
+> Si preferís SSH:
 >
-> ```
+> ```bash
 > git clone git@github.com:CJ-518/NGO-ANS.git
 > ```
 
-### 2. Requisitos Previos
+### 2. Requisitos previos
 
-- Java JDK 21 (o superior).
-- PostgreSQL, con una base de datos local llamada exactamente `ngo_saeca`.
+- Java JDK 21 o superior.
+- PostgreSQL instalado, con una base de datos local llamada exactamente `ngo_saeca`.
+- No hace falta instalar Maven: el proyecto incluye el wrapper (`mvnw` / `mvnw.cmd`).
 
-### 3. Configurar la Base de Datos
+### 3. Configurar la base de datos
 
-Importá el esquema SQL ubicado en `db/ngo_ans.sql` dentro de tu base de datos local `ngo_saeca`, usando pgAdmin o la terminal:
+Importá el esquema SQL de `db/ngo_ans.sql` en tu base `ngo_saeca`, usando pgAdmin o la terminal:
 
-```
+```bash
 psql -U postgres -d ngo_saeca -f db/ngo_ans.sql
 ```
 
-### 4. Ejecutar el Sistema (Script Interactivo)
+El volcado incluye la estructura completa y algunos registros de ejemplo en `cliente`, `producto` y `garantia`.
 
-El proyecto cuenta con un script de inicio automático en PowerShell que solicita tus credenciales locales de forma segura y abre el navegador por vos.
+### 4. Ejecutar el sistema (script interactivo)
+
+El proyecto incluye un script de inicio en PowerShell que pide las credenciales locales y abre el navegador automáticamente.
 
 1. Abrí **PowerShell** en la carpeta raíz del proyecto.
 2. Ejecutá:
 
-```
-.\iniciar.ps1
-```
+   ```powershell
+   .\iniciar.ps1
+   ```
 
-3. Ingresá tu usuario de PostgreSQL (por defecto es `postgres`) y tu contraseña cuando el script te lo pida.
+3. Ingresá tu usuario de PostgreSQL (por defecto `postgres`) y la contraseña cuando el script las solicite.
 
-El sistema arrancará de forma silenciosa y abrirá automáticamente tu navegador en <http://localhost:8080>. Para detener el servidor, presioná `Ctrl + C` en la terminal.
+El sistema arranca en modo silencioso y abre el navegador en <http://localhost:8080>. Para detener el servidor, presioná `Ctrl + C` en la terminal.
 
-> **Alternativa manual (sin script):** si preferís no usar `iniciar.ps1`, podés levantar la aplicación directamente con Maven y definir las variables de entorno antes de iniciar.
+> **Alternativa manual (sin script).** Definí las variables de entorno y levantá la aplicación con Maven.
 >
-> En Windows (PowerShell):
+> Windows (PowerShell):
 >
-> ```
+> ```powershell
 > $env:DB_USER = "postgres"
 > $env:DB_PASSWORD = "tu_contrasena"
 > .\mvnw.cmd spring-boot:run
 > ```
 >
-> En Linux/Mac:
+> Linux / macOS:
 >
-> ```
+> ```bash
 > export DB_USER="postgres"
 > export DB_PASSWORD="tu_contrasena"
 > ./mvnw spring-boot:run
 > ```
->
-> En este caso no se editan los valores de `spring.datasource.username` ni `spring.datasource.password` dentro de `application.properties`; simplemente se pasan como variables de entorno.
 
-### 5. Probar el Sistema
+### 5. Probar el sistema
 
-Una vez que la terminal indique que la aplicación ha iniciado, abrí tu navegador en:
+Cuando la terminal indique que la aplicación inició, abrí:
 
-- **Panel Principal:** <http://localhost:8080>
+- **Panel principal:** <http://localhost:8080>
 - **Nueva solicitud:** <http://localhost:8080/nueva-solicitud.html>
 
-Para probar la búsqueda, registrá una solicitud y escribí el número de documento del cliente (o parte de él) en el campo de búsqueda del panel.
+---
 
-## Notas para Desarrollo
+## Solución de problemas
 
-- **Reiniciar tras cada cambio:** Maven copia los archivos estáticos (`index.html`, `app.js`, `style.css`, etc.) al arrancar, así que cualquier cambio en `src/` requiere reiniciar la aplicación. Después, recargá el navegador con `Ctrl + F5` para evitar la caché.
-- **Esquema de la base de datos:** `spring.jpa.hibernate.ddl-auto=update` hace que Hibernate agregue tablas o columnas nuevas si faltan, pero no reemplaza la importación inicial de `db/ngo_ans.sql`.
-- **Logs:** la terminal está configurada para mostrar solo errores críticos. Si algo falla (por ejemplo, un error de PostgreSQL al guardar o eliminar), el detalle aparece ahí.
+| Síntoma | Causa probable |
+| --- | --- |
+| `FATAL: password authentication failed` | Usuario o contraseña de PostgreSQL incorrectos en `DB_USER` / `DB_PASSWORD`. |
+| `database "ngo_saeca" does not exist` | Falta crear la base local con ese nombre exacto. |
+| `Port 8080 was already in use` | Otro proceso ocupa el puerto; cerralo o cambiá `server.port` en `application.properties`. |
+| El panel carga vacío | La base está creada pero sin datos: importá `db/ngo_ans.sql`. |
+| No se puede ejecutar `iniciar.ps1` | Política de ejecución de PowerShell: `Set-ExecutionPolicy -Scope Process RemoteSigned`. |
 
-## Limitaciones Conocidas
+---
 
-- El sistema **no tiene autenticación**: cualquier persona con acceso a la aplicación puede ver, modificar y eliminar solicitudes.
-- Cada solicitud nueva crea también un cliente y un producto nuevos; no se reutilizan registros existentes.
-- La garantía, la asignación de técnicos y el historial de seguimiento todavía no se gestionan desde la interfaz.
+## Estado del proyecto
+
+Prototipo académico con fines demostrativos. No incluye autenticación de usuarios ni despliegue en producción; las tablas `usuario`, `rol`, `asignacion` y `servicio_autorizado` están modeladas en la base pero todavía no se gestionan desde la interfaz.
