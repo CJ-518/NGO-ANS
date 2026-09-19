@@ -2,12 +2,12 @@
 -- PostgreSQL database dump
 --
 
-\restrict XhnrFySrDJOuA0GXQCVKDrXKtimxOafcXM4x4juBDSqeX5sdZI3YnUvjsngGRTT
+\restrict vfjIIb93aycyW4mWVDfXuz8IujEJqouMsyJcTXqIypOLmnH1BS4MSe9XbnScsYW
 
 -- Dumped from database version 18.6
 -- Dumped by pg_dump version 18.6
 
--- Started on 2026-09-15 19:18:05
+-- Started on 2026-09-19 00:22:18
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -489,6 +489,15 @@ COPY public.asignacion (id_asignacion, id_solicitud, id_usuario, fecha_asignacio
 
 COPY public.cliente (id_cliente, nombre, documento, telefono, correo) FROM stdin;
 1	Cliente de Prueba	1234567	0981222333	prueba@test.com
+2	Claudio Jara	5099215	0991979584	claudiojara@gmail.com
+3	Prueba Prueba	1234567	0991789123	asdfg@gmail.com
+4	Soto	5888111	0982400900	soto@gmail.com
+5	María Gómez	4123456	+595981123456	maria.gomez@example.com
+6	Sofía Ramírez	6234567	+595985567890	sofia.ramirez@example.com
+7	Luis Villalba	2789012	+595984456789	\N
+8	Carlos Benítez	3567890	+595982234567	carlos.benitez@example.com
+9	Ana Duarte	5012345	0983345678	ana.duarte@example.com
+10	Luis Soto	4111222	0994856271	soto@gmail.com
 \.
 
 
@@ -499,6 +508,17 @@ COPY public.cliente (id_cliente, nombre, documento, telefono, correo) FROM stdin
 --
 
 COPY public.garantia (id_garantia, id_cliente, id_producto, fecha_inicio, fecha_fin, estado) FROM stdin;
+1	8	11	2026-05-30	2027-05-30	VIGENTE
+2	9	12	2025-12-05	2026-06-05	VENCIDA
+3	5	10	2025-06-15	2026-06-15	VENCIDA
+4	6	13	2026-08-01	2027-08-01	VIGENTE
+5	5	5	2026-03-10	2027-03-10	VIGENTE
+6	7	8	2025-10-01	2026-10-01	VIGENTE
+7	8	6	2024-05-02	2025-05-02	VENCIDA
+8	1	1	2026-01-20	2027-01-20	VIGENTE
+9	7	14	2026-09-10	2027-09-10	VIGENTE
+10	6	9	2026-01-15	2028-01-15	VIGENTE
+11	9	7	2025-11-20	2027-11-20	VIGENTE
 \.
 
 
@@ -510,6 +530,19 @@ COPY public.garantia (id_garantia, id_cliente, id_producto, fecha_inicio, fecha_
 
 COPY public.producto (id_producto, marca, modelo, nro_serie, tipo_producto) FROM stdin;
 1	NGO	Climatizador A1	SN-00012345	Equipo de climatizacion
+2	Tokyo	qwes	2	Televisor
+3	Tokyo	789	7894515	Televisor
+4	Samsung	7894516	45689186	Vibrador
+5	Samsung	Crystal UHD 55	SN-TV-0001	Televisor
+6	LG	UR7800 43	SN-TV-0002	Televisor
+7	Whirlpool	Frost Free 375L	SN-HE-0001	Heladera
+8	Samsung	Twin Cooling 380L	SN-HE-0002	Heladera
+9	Midea	Inverter 12000 BTU	SN-AA-0001	Aire acondicionado
+10	LG	Dual Inverter 18000 BTU	SN-AA-0002	Aire acondicionado
+11	Electrolux	EcoWash 10kg	SN-LA-0001	Lavarropas
+12	Samsung	Galaxy A54	SN-CE-0001	Celular
+13	Lenovo	IdeaPad 3 15	SN-NB-0001	Notebook
+14	Philips	Airfryer XL	SN-FR-0001	Freidora de aire
 \.
 
 
@@ -550,7 +583,7 @@ COPY public.servicio_autorizado (id_servicio, nombre, ciudad, estado) FROM stdin
 --
 
 COPY public.solicitud (id_solicitud, id_cliente, id_producto, fecha, descripcion, estado_actual, id_garantia) FROM stdin;
-1	1	1	2026-09-15 17:30:36.765208	El equipo no enfria correctamente y presenta ruido.	RECIBIDA	\N
+5	10	13	2026-09-19 00:16:57.840646	No carga	RECIBIDA	4
 \.
 
 
@@ -579,7 +612,7 @@ SELECT pg_catalog.setval('public.asignacion_id_asignacion_seq', 1, false);
 -- Name: cliente_id_cliente_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.cliente_id_cliente_seq', 1, true);
+SELECT pg_catalog.setval('public.cliente_id_cliente_seq', 10, true);
 
 
 --
@@ -588,7 +621,7 @@ SELECT pg_catalog.setval('public.cliente_id_cliente_seq', 1, true);
 -- Name: garantia_id_garantia_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.garantia_id_garantia_seq', 1, false);
+SELECT pg_catalog.setval('public.garantia_id_garantia_seq', 11, true);
 
 
 --
@@ -597,7 +630,7 @@ SELECT pg_catalog.setval('public.garantia_id_garantia_seq', 1, false);
 -- Name: producto_id_producto_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.producto_id_producto_seq', 1, true);
+SELECT pg_catalog.setval('public.producto_id_producto_seq', 14, true);
 
 
 --
@@ -633,7 +666,7 @@ SELECT pg_catalog.setval('public.servicio_autorizado_id_servicio_seq', 1, false)
 -- Name: solicitud_id_solicitud_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.solicitud_id_solicitud_seq', 1, true);
+SELECT pg_catalog.setval('public.solicitud_id_solicitud_seq', 5, true);
 
 
 --
@@ -843,11 +876,11 @@ ALTER TABLE ONLY public.usuario
     ADD CONSTRAINT usuario_id_servicio_fkey FOREIGN KEY (id_servicio) REFERENCES public.servicio_autorizado(id_servicio);
 
 
--- Completed on 2026-09-15 19:18:05
+-- Completed on 2026-09-19 00:22:18
 
 --
 -- PostgreSQL database dump complete
 --
 
-\unrestrict XhnrFySrDJOuA0GXQCVKDrXKtimxOafcXM4x4juBDSqeX5sdZI3YnUvjsngGRTT
+\unrestrict vfjIIb93aycyW4mWVDfXuz8IujEJqouMsyJcTXqIypOLmnH1BS4MSe9XbnScsYW
 
