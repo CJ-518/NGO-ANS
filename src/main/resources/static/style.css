@@ -55,7 +55,7 @@ label {
     margin-bottom: 5px;
     color: #4a5568;
 }
-input[type="text"], input[type="email"], textarea {
+input[type="text"], input[type="email"], input[type="password"], textarea {
     width: 100%;
     padding: 10px;
     border: 1px solid #cbd5e0;

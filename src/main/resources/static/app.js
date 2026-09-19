@@ -1,4 +1,26 @@
-document.addEventListener('DOMContentLoaded', () => {
+let rolActual = null;
+
+async function cargarUsuarioActual() {
+    try {
+        const res = await fetch('/api/usuario/actual');
+        if (!res.ok) return;
+        const u = await res.json();
+        rolActual = u.rol;
+        const span = document.getElementById('usuario-actual');
+        if (span) span.textContent = `${u.nombre} (${u.rol})`;
+
+        // El botón "Nueva solicitud" del header no lo puede usar un TECNICO.
+        const btnNueva = document.getElementById('btn-nueva-solicitud');
+        if (btnNueva && rolActual === 'TECNICO') {
+            btnNueva.style.display = 'none';
+        }
+    } catch (error) {
+        console.error('Error cargando el usuario actual:', error);
+    }
+}
+
+document.addEventListener('DOMContentLoaded', async () => {
+    await cargarUsuarioActual(); // hay que esperar a saber el rol ANTES de pintar la tabla
     cargarSolicitudes();
 
     const inputDoc = document.getElementById('buscar-documento');
@@ -60,6 +82,8 @@ async function eliminarSolicitud(id) {
         } else if (response.status === 404) {
             alert('La solicitud ya no existe.');
             cargarSolicitudes(filtro);
+        } else if (response.status === 403) {
+            alert('No tenés permiso para eliminar solicitudes.');
         } else {
             alert('No se pudo eliminar la solicitud.');
         }
@@ -152,25 +176,40 @@ function cargarSolicitudes(documento = '') {
             // Definir los estados oficiales del diagrama
             const estados = ['RECIBIDA', 'ASIGNADA', 'EN DIAGNÓSTICO', 'FINALIZADA'];
 
+            // Puede cambiar el estado: ADMINISTRADOR y FUNCIONARIO. TECNICO solo lo ve (texto fijo).
+            const puedeCambiarEstado = rolActual === 'ADMINISTRADOR' || rolActual === 'FUNCIONARIO';
+
             data.forEach(solicitud => {
                 const date = new Date(solicitud.fecha).toLocaleDateString('es-PY');
-                
-                // Generar el menú desplegable (Se agregó 'this' al onchange)
-                let selectHtml = `<select class="estado-select" onchange="actualizarEstado(${solicitud.idSolicitud}, this.value, this)">`;
-                estados.forEach(est => {
-                    let isSelected = (est === solicitud.estadoActual) ? 'selected' : '';
-                    selectHtml += `<option value="${est}" ${isSelected}>${est}</option>`;
-                });
-                selectHtml += `</select>`;
-                
+
+                let estadoHtml;
+                if (puedeCambiarEstado) {
+                    // Generar el menú desplegable (Se agregó 'this' al onchange)
+                    let selectHtml = `<select class="estado-select" onchange="actualizarEstado(${solicitud.idSolicitud}, this.value, this)">`;
+                    estados.forEach(est => {
+                        let isSelected = (est === solicitud.estadoActual) ? 'selected' : '';
+                        selectHtml += `<option value="${est}" ${isSelected}>${est}</option>`;
+                    });
+                    selectHtml += `</select>`;
+                    estadoHtml = selectHtml;
+                } else {
+                    // TECNICO: solo lectura, mismo look que el badge de estado
+                    estadoHtml = `<span class="estado-select" style="display:inline-block; cursor: default;">${solicitud.estadoActual}</span>`;
+                }
+
+                // El botón Eliminar solo se pinta si el usuario logueado es ADMINISTRADOR
+                const botonEliminar = rolActual === 'ADMINISTRADOR'
+                    ? `<button class="btn-primary btn-eliminar" data-id="${solicitud.idSolicitud}" style="background-color: #c53030; padding: 6px 12px; font-size: 14px;">Eliminar</button>`
+                    : '';
+
                 const row = `<tr class="fila-solicitud" data-id="${solicitud.idSolicitud}">
                     <td>ST-${solicitud.idSolicitud}</td>
                     <td>${solicitud.cliente.nombre}</td>
                     <td>${solicitud.cliente.documento}</td>
                     <td>${solicitud.producto.tipoProducto}</td>
-                    <td>${selectHtml}</td>
+                    <td>${estadoHtml}</td>
                     <td>${date}</td>
-                    <td><button class="btn-primary btn-eliminar" data-id="${solicitud.idSolicitud}" style="background-color: #c53030; padding: 6px 12px; font-size: 14px;">Eliminar</button></td>
+                    <td>${botonEliminar}</td>
                 </tr>`;
                 tableBody.innerHTML += row;
             });
@@ -186,13 +225,15 @@ window.actualizarEstado = async function(id, nuevoEstado, selectElement) {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ estado: nuevoEstado })
         });
-        
+
         if (response.ok) {
             console.log(`Solicitud ${id} actualizada a ${nuevoEstado}`);
-            
+
             // Animación visual corregida
             selectElement.style.backgroundColor = '#e6fffa'; // Verde claro
             setTimeout(() => selectElement.style.backgroundColor = 'white', 1000); // Vuelve a blanco
+        } else if (response.status === 403) {
+            alert('No tenés permiso para cambiar el estado de una solicitud.');
         } else {
             alert('Error al actualizar la base de datos');
         }

@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NGO SAECA - Iniciar sesión</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header>
+        <div class="logo">NGO SAECA</div>
+        <div class="user-role">Gestión de garantías y servicio técnico</div>
+    </header>
+
+    <main style="max-width: 380px; margin: 60px auto;">
+        <h1>Iniciar sesión</h1>
+
+        <div id="msg-error" class="card" style="display:none; border-color:#c0392b; color:#c0392b; margin-bottom: 15px;">
+            Correo o contraseña incorrectos.
+        </div>
+        <div id="msg-logout" class="card" style="display:none; margin-bottom: 15px;">
+            Sesión finalizada correctamente.
+        </div>
+
+        <!-- Spring Security procesa este POST en /login (loginProcessingUrl) -->
+        <form method="POST" action="/login">
+            <div style="margin-bottom: 12px;">
+                <label for="username">Correo</label><br>
+                <input type="email" id="username" name="username" required style="width:100%;">
+            </div>
+            <div style="margin-bottom: 12px;">
+                <label for="password">Contraseña</label><br>
+                <input type="password" id="password" name="password" required style="width:100%;">
+            </div>
+            <button type="submit" class="btn-primary">Ingresar</button>
+        </form>
+    </main>
+
+    <script>
+        const params = new URLSearchParams(window.location.search);
+        if (params.has('error')) document.getElementById('msg-error').style.display = 'block';
+        if (params.has('logout')) document.getElementById('msg-logout').style.display = 'block';
+    </script>
+</body>
+</html>
