@@ -36,6 +36,7 @@ public class SecurityConfig {
                 // Sólo ADMINISTRADOR puede eliminar solicitudes o administrar usuarios/roles
                 .requestMatchers(HttpMethod.DELETE, "/api/solicitudes/**").hasRole("ADMINISTRADOR")
                 .requestMatchers("/api/usuarios/**").hasRole("ADMINISTRADOR")
+                .requestMatchers("/usuarios.html", "/usuarios.js").hasRole("ADMINISTRADOR")
 
                 // TECNICO no puede dar de alta clientes/productos/solicitudes nuevas,
                 // ni cambiar el estado de una solicitud: eso queda para ADMINISTRADOR y FUNCIONARIO.

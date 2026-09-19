@@ -5,4 +5,7 @@ import java.util.Optional;
 
 public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
     Optional<Usuario> findByCorreo(String correo);
+
+    // Para evitar correos repetidos aunque cambien las mayúsculas
+    boolean existsByCorreoIgnoreCase(String correo);
 }

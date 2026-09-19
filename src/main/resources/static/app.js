@@ -14,6 +14,12 @@ async function cargarUsuarioActual() {
         if (btnNueva && rolActual === 'TECNICO') {
             btnNueva.style.display = 'none';
         }
+
+        // Solo el ADMINISTRADOR puede administrar usuarios.
+        const btnUsuarios = document.getElementById('btn-usuarios');
+        if (btnUsuarios && rolActual === 'ADMINISTRADOR') {
+            btnUsuarios.style.display = 'inline-block';
+        }
     } catch (error) {
         console.error('Error cargando el usuario actual:', error);
     }

@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NGO SAECA - Usuarios</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header>
+        <div class="logo">NGO SAECA</div>
+        <div class="user-role">Gestión de garantías y servicio técnico</div>
+    </header>
+
+    <main>
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <h1>Usuarios</h1>
+            <a href="index.html" style="text-decoration: none; color: #1a365d; font-weight: bold;">&larr; Volver al Panel</a>
+        </div>
+
+        <form id="usuario-form" class="form-container">
+            <div class="card form-section">
+                <h2>Nuevo usuario</h2>
+                <p style="color: #4a5568; margin-top: 0;">
+                    Podés dar de alta funcionarios y técnicos. La contraseña debe tener al menos 8 caracteres.
+                </p>
+                <div class="form-grid">
+                    <div>
+                        <label for="nombre">Nombre y apellido</label>
+                        <input type="text" id="nombre" maxlength="100" autocomplete="off" required>
+                    </div>
+                    <div>
+                        <label for="correo">Correo electrónico</label>
+                        <input type="email" id="correo" maxlength="100" autocomplete="off" required>
+                    </div>
+                    <div>
+                        <label for="clave">Contraseña</label>
+                        <input type="password" id="clave" minlength="8" autocomplete="new-password" required
+                               style="width: 100%; padding: 10px; border: 1px solid #cbd5e0; border-radius: 4px; box-sizing: border-box;">
+                    </div>
+                    <div>
+                        <label for="clave2">Repetir contraseña</label>
+                        <input type="password" id="clave2" minlength="8" autocomplete="new-password" required
+                               style="width: 100%; padding: 10px; border: 1px solid #cbd5e0; border-radius: 4px; box-sizing: border-box;">
+                    </div>
+                    <div>
+                        <label for="rol">Rol</label>
+                        <select id="rol" required
+                                style="width: 100%; padding: 10px; border: 1px solid #cbd5e0; border-radius: 4px; box-sizing: border-box; background-color: white;">
+                            <option value="FUNCIONARIO">Funcionario</option>
+                            <option value="TECNICO">Técnico</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Resultado de la operación (lo completa usuarios.js) -->
+                <div id="mensaje" style="display: none; margin-top: 15px; padding: 10px 12px; border-radius: 4px;"></div>
+
+                <div style="margin-top: 20px; text-align: right;">
+                    <button type="submit" class="btn-primary">Crear usuario</button>
+                </div>
+            </div>
+        </form>
+
+        <h2>Usuarios registrados</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Nombre</th>
+                    <th>Correo</th>
+                    <th>Rol</th>
+                    <th>Estado</th>
+                </tr>
+            </thead>
+            <tbody id="usuarios-body">
+                <!-- JavaScript will inject the rows here -->
+            </tbody>
+        </table>
+    </main>
+
+    <script src="usuarios.js"></script>
+</body>
+</html>
