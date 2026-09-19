@@ -1,7 +1,10 @@
 package com.ngo.sistema;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "solicitud")
@@ -31,6 +34,16 @@ public class Solicitud {
 
     @Column(name = "estado_actual", nullable = false, length = 30)
     private String estadoActual = "RECIBIDA";
+
+    // Al eliminar una solicitud se eliminan también sus asignaciones y su seguimiento
+    // (las FK de la base de datos no tienen ON DELETE CASCADE). No se exponen en el JSON.
+    @JsonIgnore
+    @OneToMany(mappedBy = "solicitud", cascade = CascadeType.REMOVE)
+    private List<Asignacion> asignaciones = new ArrayList<>();
+
+    @JsonIgnore
+    @OneToMany(mappedBy = "solicitud", cascade = CascadeType.REMOVE)
+    private List<Seguimiento> seguimientos = new ArrayList<>();
 
     // Getters and Setters
     public Long getIdSolicitud() { return idSolicitud; }

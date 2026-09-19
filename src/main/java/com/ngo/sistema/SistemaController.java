@@ -1,6 +1,7 @@
 package com.ngo.sistema;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.Map;
@@ -37,10 +38,30 @@ public class SistemaController {
     public List<Solicitud> listarSolicitudes() {
         return solicitudRepo.findAll();
     }
+
+    @GetMapping("/solicitudes/buscar")
+    public List<Solicitud> buscarPorDocumento(@RequestParam String documento) {
+        String doc = documento.trim();
+        if (doc.isEmpty()) {
+            return solicitudRepo.findAll();
+        }
+        return solicitudRepo.findByClienteDocumentoContainingOrderByFechaDesc(doc);
+    }
+
     @GetMapping("/solicitudes/{id}")
     public Solicitud obtenerSolicitud(@PathVariable Long id) {
         return solicitudRepo.findById(id).orElse(null);
     }
+
+    @DeleteMapping("/solicitudes/{id}")
+    public ResponseEntity<Void> eliminarSolicitud(@PathVariable Long id) {
+        if (!solicitudRepo.existsById(id)) {
+            return ResponseEntity.notFound().build();
+        }
+        solicitudRepo.deleteById(id);
+        return ResponseEntity.noContent().build();
+    }
+
     @PutMapping("/solicitudes/{id}/estado")
     public Solicitud actualizarEstado(@PathVariable Long id, @RequestBody Map<String, String> payload) {
         Solicitud solicitud = solicitudRepo.findById(id).orElse(null);

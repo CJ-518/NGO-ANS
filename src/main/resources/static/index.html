@@ -17,7 +17,6 @@
         <div style="display: flex; justify-content: space-between; align-items: center;">
             <h1>Panel Principal</h1>
             <div>
-                <a href="seguimiento.html" class="btn-primary" style="background-color: #4a5568; margin-right: 10px; text-decoration: none;">Portal del Cliente</a>
                 <a href="nueva-solicitud.html" class="btn-primary" style="text-decoration: none;">Nueva solicitud</a>
             </div>
         </div>
@@ -30,14 +29,22 @@
         </div>
 
         <h2>Solicitudes recientes</h2>
+
+        <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+            <input type="text" id="buscar-documento" inputmode="numeric" placeholder="Buscar por N° de documento del cliente" style="width: 320px;">
+            <button id="btn-limpiar" class="btn-primary" style="background-color: #4a5568;">Limpiar</button>
+        </div>
+
         <table>
             <thead>
                 <tr>
                     <th>Número</th>
                     <th>Cliente</th>
+                    <th>Documento</th>
                     <th>Producto</th>
                     <th>Estado</th>
                     <th>Fecha</th>
+                    <th>Acciones</th>
                 </tr>
             </thead>
             <tbody id="solicitudes-body">
@@ -45,6 +52,59 @@
             </tbody>
         </table>
     </main>
+
+    <!-- Detalle de solicitud (se abre al hacer click en una fila) -->
+    <div id="modal-detalle" class="modal-overlay" style="display: none;">
+        <div class="modal-content">
+            <button id="modal-cerrar" class="modal-cerrar" aria-label="Cerrar">&times;</button>
+            <h2 id="detalle-titulo" style="margin-top: 0;">Solicitud</h2>
+
+            <p style="color: #4a5568;">Estado actual</p>
+            <h2 id="estado-actual" style="color: #2b6cb0; font-size: 28px; text-transform: uppercase; margin-top: 0;"></h2>
+            <p><strong>Última actualización:</strong> <span id="fecha-actualizacion"></span></p>
+
+            <!-- Línea de tiempo visual -->
+            <div class="timeline">
+                <div class="timeline-step">
+                    <div class="circle"></div>
+                    <p>Recibida</p>
+                </div>
+                <div class="timeline-line"></div>
+                <div class="timeline-step">
+                    <div class="circle"></div>
+                    <p>Asignada</p>
+                </div>
+                <div class="timeline-line"></div>
+                <div class="timeline-step">
+                    <div class="circle"></div>
+                    <p>Diagnóstico</p>
+                </div>
+                <div class="timeline-line"></div>
+                <div class="timeline-step">
+                    <div class="circle"></div>
+                    <p>Finalizada</p>
+                </div>
+            </div>
+
+            <h3>Detalles</h3>
+            <table>
+                <tbody>
+                    <tr>
+                        <td style="width: 200px; font-weight: bold;">Cliente</td>
+                        <td id="detalle-cliente"></td>
+                    </tr>
+                    <tr>
+                        <td style="font-weight: bold;">Producto</td>
+                        <td id="detalle-producto"></td>
+                    </tr>
+                    <tr>
+                        <td style="font-weight: bold;">Problema reportado</td>
+                        <td id="detalle-descripcion"></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
 
     <script src="app.js"></script>
 </body>

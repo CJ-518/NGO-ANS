@@ -129,3 +129,49 @@ input[type="text"], input[type="email"], textarea {
     cursor: pointer;
     transition: background-color 0.3s;
 }
+
+
+/* Filas clickeables */
+.fila-solicitud {
+    cursor: pointer;
+}
+.fila-solicitud:hover {
+    background-color: #f7fafc;
+}
+
+/* Ventana de detalle de solicitud */
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    padding: 20px;
+}
+.modal-content {
+    position: relative;
+    background: white;
+    border-radius: 6px;
+    padding: 30px;
+    width: 100%;
+    max-width: 900px;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-sizing: border-box;
+}
+.modal-cerrar {
+    position: absolute;
+    top: 10px;
+    right: 15px;
+    background: none;
+    border: none;
+    font-size: 32px;
+    line-height: 1;
+    color: #4a5568;
+    cursor: pointer;
+}
+.modal-cerrar:hover {
+    color: #1a365d;
+}
