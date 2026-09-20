@@ -1,10 +1,13 @@
 package com.ngo.sistema;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 
 @Entity
 @Table(name = "solicitud")
@@ -66,4 +69,17 @@ public class Solicitud {
     
     public String getEstadoActual() { return estadoActual; }
     public void setEstadoActual(String estadoActual) { this.estadoActual = estadoActual; }
+
+    // Técnico asignado actualmente (la última asignación). Solo se lee: se envía al frontend
+    // como "tecnicoAsignado": { idUsuario, nombre }, o null si todavía no tiene técnico.
+    @JsonProperty(value = "tecnicoAsignado", access = JsonProperty.Access.READ_ONLY)
+    public Map<String, Object> getTecnicoAsignado() {
+        return asignaciones.stream()
+                .filter(a -> a.getUsuario() != null)
+                .max(Comparator.comparing(Asignacion::getIdAsignacion))
+                .map(a -> Map.<String, Object>of(
+                        "idUsuario", a.getUsuario().getIdUsuario(),
+                        "nombre", a.getUsuario().getNombre()))
+                .orElse(null);
+    }
 }

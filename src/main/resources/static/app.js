@@ -1,4 +1,5 @@
 let rolActual = null;
+let tecnicos = []; // técnicos activos, para el selector de asignación
 
 async function cargarUsuarioActual() {
     try {
@@ -19,6 +20,18 @@ async function cargarUsuarioActual() {
         const btnUsuarios = document.getElementById('btn-usuarios');
         if (btnUsuarios && rolActual === 'ADMINISTRADOR') {
             btnUsuarios.style.display = 'inline-block';
+        }
+
+        // La columna "Acciones" solo tiene el botón Eliminar, exclusivo del ADMINISTRADOR:
+        // para el resto de los roles no se muestra.
+        const thAcciones = document.getElementById('th-acciones');
+        if (thAcciones && rolActual !== 'ADMINISTRADOR') {
+            thAcciones.style.display = 'none';
+        }
+
+        // Quienes pueden asignar (ADMINISTRADOR y FUNCIONARIO) necesitan la lista de técnicos.
+        if (rolActual === 'ADMINISTRADOR' || rolActual === 'FUNCIONARIO') {
+            await cargarTecnicos();
         }
     } catch (error) {
         console.error('Error cargando el usuario actual:', error);
@@ -66,6 +79,52 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (e.key === 'Escape') cerrarDetalle();
     });
 });
+
+// Evita que un texto de la base de datos se interprete como HTML
+function escaparHtml(texto) {
+    return String(texto ?? '')
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
+async function cargarTecnicos() {
+    try {
+        const res = await fetch('/api/tecnicos');
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        tecnicos = await res.json();
+    } catch (error) {
+        console.error('Error cargando los técnicos:', error);
+        tecnicos = [];
+    }
+}
+
+async function asignarTecnico(idSolicitud, idTecnico) {
+    const filtro = document.getElementById('buscar-documento').value;
+
+    try {
+        const response = await fetch(`/api/solicitudes/${idSolicitud}/asignar`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ idTecnico: Number(idTecnico) })
+        });
+
+        if (!response.ok) {
+            let mensaje = 'No se pudo asignar el técnico.';
+            if (response.status === 403) {
+                mensaje = 'No tenés permiso para asignar técnicos.';
+            } else {
+                try { mensaje = (await response.json()).error || mensaje; } catch (e) { /* sin JSON */ }
+            }
+            alert(mensaje);
+        }
+    } catch (error) {
+        console.error('Error asignando el técnico:', error);
+        alert('Error de conexión al asignar el técnico.');
+    }
+
+    // Se recarga la tabla: refleja el técnico asignado y el nuevo estado (RECIBIDA pasa a ASIGNADA)
+    cargarSolicitudes(filtro);
+}
 
 async function eliminarSolicitud(id) {
     const confirmado = confirm(
@@ -175,7 +234,8 @@ function cargarSolicitudes(documento = '') {
             }
 
             if (data.length === 0) {
-                tableBody.innerHTML = '<tr><td colspan="7">No se encontraron solicitudes para ese documento.</td></tr>';
+                const columnas = rolActual === 'ADMINISTRADOR' ? 8 : 7;
+                tableBody.innerHTML = `<tr><td colspan="${columnas}">No se encontraron solicitudes para ese documento.</td></tr>`;
                 return;
             }
 
@@ -184,6 +244,8 @@ function cargarSolicitudes(documento = '') {
 
             // Puede cambiar el estado: ADMINISTRADOR y FUNCIONARIO. TECNICO solo lo ve (texto fijo).
             const puedeCambiarEstado = rolActual === 'ADMINISTRADOR' || rolActual === 'FUNCIONARIO';
+            // Asignar técnicos: mismos roles que pueden cambiar el estado.
+            const puedeAsignar = rolActual === 'ADMINISTRADOR' || rolActual === 'FUNCIONARIO';
 
             data.forEach(solicitud => {
                 const date = new Date(solicitud.fecha).toLocaleDateString('es-PY');
@@ -203,9 +265,33 @@ function cargarSolicitudes(documento = '') {
                     estadoHtml = `<span class="estado-select" style="display:inline-block; cursor: default;">${solicitud.estadoActual}</span>`;
                 }
 
-                // El botón Eliminar solo se pinta si el usuario logueado es ADMINISTRADOR
-                const botonEliminar = rolActual === 'ADMINISTRADOR'
-                    ? `<button class="btn-primary btn-eliminar" data-id="${solicitud.idSolicitud}" style="background-color: #c53030; padding: 6px 12px; font-size: 14px;">Eliminar</button>`
+                // Técnico asignado: ADMINISTRADOR y FUNCIONARIO lo eligen con un selector; el TECNICO solo lo ve
+                const asignado = solicitud.tecnicoAsignado;
+                let tecnicoHtml;
+                if (puedeAsignar) {
+                    let selectTecnico = `<select class="estado-select" onchange="asignarTecnico(${solicitud.idSolicitud}, this.value)">`;
+                    if (!asignado) {
+                        selectTecnico += `<option value="" selected disabled>Sin asignar</option>`;
+                    }
+                    tecnicos.forEach(t => {
+                        const seleccionado = asignado && asignado.idUsuario === t.idUsuario ? 'selected' : '';
+                        selectTecnico += `<option value="${t.idUsuario}" ${seleccionado}>${escaparHtml(t.nombre)}</option>`;
+                    });
+                    // Si el técnico asignado ya no está activo, igualmente se muestra su nombre
+                    if (asignado && !tecnicos.some(t => t.idUsuario === asignado.idUsuario)) {
+                        selectTecnico += `<option value="${asignado.idUsuario}" selected disabled>${escaparHtml(asignado.nombre)}</option>`;
+                    }
+                    selectTecnico += `</select>`;
+                    tecnicoHtml = selectTecnico;
+                } else {
+                    tecnicoHtml = asignado
+                        ? escaparHtml(asignado.nombre)
+                        : `<span style="color: #718096;">Sin asignar</span>`;
+                }
+
+                // La columna Acciones (botón Eliminar) solo existe para el ADMINISTRADOR
+                const celdaAcciones = rolActual === 'ADMINISTRADOR'
+                    ? `<td><button class="btn-primary btn-eliminar" data-id="${solicitud.idSolicitud}" style="background-color: #c53030; padding: 6px 12px; font-size: 14px;">Eliminar</button></td>`
                     : '';
 
                 const row = `<tr class="fila-solicitud" data-id="${solicitud.idSolicitud}">
@@ -213,9 +299,10 @@ function cargarSolicitudes(documento = '') {
                     <td>${solicitud.cliente.nombre}</td>
                     <td>${solicitud.cliente.documento}</td>
                     <td>${solicitud.producto.tipoProducto}</td>
+                    <td>${tecnicoHtml}</td>
                     <td>${estadoHtml}</td>
                     <td>${date}</td>
-                    <td>${botonEliminar}</td>
+                    ${celdaAcciones}
                 </tr>`;
                 tableBody.innerHTML += row;
             });
