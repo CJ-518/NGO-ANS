@@ -17,11 +17,13 @@ La aplicación es un backend Spring Boot que expone una API REST protegida con S
   * Contador de solicitudes abiertas.
   * Búsqueda de solicitudes por número de documento del cliente (coincidencia parcial, mientras se escribe).
   * Cambio de estado en línea desde un selector, con persistencia inmediata en la base de datos.
+  * Asignación de una solicitud a un técnico activo desde un selector disponible para `ADMINISTRADOR` y `FUNCIONARIO`.
   * Eliminación de solicitudes, con confirmación (borra en cascada sus asignaciones y su seguimiento).
   * Los botones y acciones disponibles dependen del rol del usuario.
 - Detalle y seguimiento (modal del panel)
   * Al hacer clic en una fila se abre el detalle de la solicitud con una línea de tiempo visual: Recibida → Asignada → Diagnóstico → Finalizada.
-  * Muestra cliente, producto, problema reportado y última actualización.
+  * Muestra cliente, producto, problema reportado, técnico asignado y última actualización.
+  * El historial de seguimiento registra cada cambio de estado con diagnóstico y usuario responsable.
 - Registro de solicitudes (`nueva-solicitud.html`)
   * Alta enlazada de cliente y solicitud técnica en un solo formulario.
   * El producto se elige entre los productos registrados en la base de datos; el formulario no crea productos.
@@ -43,7 +45,7 @@ La garantía de un producto empieza el día en que fue vendido: `garantia.fecha_
 
 `RECIBIDA` → `ASIGNADA` → `EN DIAGNÓSTICO` → `FINALIZADA`
 
-Toda solicitud nueva se crea en estado `RECIBIDA`.
+Toda solicitud nueva se crea en estado `RECIBIDA`. Un `ADMINISTRADOR` o `FUNCIONARIO` puede asignar un técnico, y el técnico asignado puede registrar un diagnóstico o finalizar la solicitud según el flujo del negocio.
 
 ---
 
@@ -56,11 +58,13 @@ Los permisos se aplican tanto en la interfaz como en el servidor.
 | Ver el panel, buscar y ver el detalle de solicitudes | ✔ | ✔ | ✔ |
 | Consultar productos y garantías | ✔ | ✔ | ✔ |
 | Registrar solicitudes nuevas (y sus clientes) | ✔ | ✔ | ✘ |
+| Asignar una solicitud a un técnico | ✔ | ✔ | ✘ |
 | Cambiar el estado de una solicitud | ✔ | ✔ | ✘ |
+| Registrar diagnóstico y finalizar la solicitud asignada | ✘ | ✘ | ✔ |
 | Eliminar solicitudes | ✔ | ✘ | ✘ |
 | Administrar usuarios (crear `FUNCIONARIO` / `TECNICO`) | ✔ | ✘ | ✘ |
 
-Un `TECNICO` ve el estado de las solicitudes como texto fijo y no ve el botón Nueva solicitud. Solo un `ADMINISTRADOR` ve el botón Usuarios en el panel y puede acceder a `usuarios.html` / `/api/usuarios`.
+Un `TECNICO` ve el estado de las solicitudes como texto fijo, no ve el botón Nueva solicitud y solo puede avanzar las solicitudes que le fueron asignadas. Solo un `ADMINISTRADOR` ve el botón Usuarios en el panel y puede acceder a `usuarios.html` / `/api/usuarios`.
 
 ---
 
@@ -134,7 +138,7 @@ NGO-ANS/
 
 Tablas: `cliente`, `producto`, `garantia`, `solicitud`, `seguimiento`, `asignacion`, `usuario`, `rol` y `servicio_autorizado`.
 
-La interfaz actual trabaja con `cliente`, `producto`, `garantia`, `solicitud`, `usuario` y `rol`. Las tablas `asignacion`, `seguimiento` y `servicio_autorizado` están modeladas pero todavía no se gestionan desde la interfaz.
+La interfaz actual trabaja con `cliente`, `producto`, `garantia`, `solicitud`, `usuario`, `rol`, `asignacion` y `seguimiento`. La tabla `servicio_autorizado` sigue modelada pero aún no se gestiona desde la interfaz; las asignaciones y el historial técnico sí forman parte del flujo principal del sistema.
 
 ---
 
@@ -153,6 +157,11 @@ Todos los endpoints cuelgan de `/api` y requieren sesión iniciada. La columna A
 | `GET` | `/api/solicitudes` | Lista todas las solicitudes | Cualquier usuario |
 | `GET` | `/api/solicitudes/buscar?documento=` | Busca solicitudes por documento del cliente | Cualquier usuario |
 | `GET` | `/api/solicitudes/{id}` | Obtiene el detalle de una solicitud | Cualquier usuario |
+| `GET` | `/api/tecnicos` | Lista técnicos activos, ordenados por nombre | `ADMINISTRADOR`, `FUNCIONARIO` |
+| `POST` | `/api/solicitudes/{id}/asignar` | Asigna una solicitud a un técnico activo | `ADMINISTRADOR`, `FUNCIONARIO` |
+| `GET` | `/api/solicitudes/{id}/seguimiento` | Devuelve el historial de cambios y diagnósticos de la solicitud | Cualquier usuario |
+| `POST` | `/api/solicitudes/{id}/diagnostico` | Registra un diagnóstico y pasa la solicitud a `EN DIAGNÓSTICO` | `TECNICO` asignado |
+| `POST` | `/api/solicitudes/{id}/finalizar` | Finaliza la solicitud y registra el cierre en el seguimiento | `TECNICO` asignado |
 | `PUT` | `/api/solicitudes/{id}/estado` | Actualiza el estado; cuerpo: `{ "estado": "ASIGNADA" }` | `ADMINISTRADOR`, `FUNCIONARIO` |
 | `DELETE` | `/api/solicitudes/{id}` | Elimina la solicitud y sus registros relacionados | `ADMINISTRADOR` |
 | `GET` | `/api/usuarios` | Lista los usuarios registrados (nombre, correo, rol, estado) | `ADMINISTRADOR` |

@@ -105,6 +105,36 @@
                     </tr>
                 </tbody>
             </table>
+
+            <h3>Seguimiento</h3>
+            <div id="detalle-seguimiento" style="color: #4a5568;"></div>
+        </div>
+    </div>
+
+    <!-- Actualizar estado (lo usa el TECNICO sobre las solicitudes que tiene asignadas) -->
+    <div id="modal-avance" class="modal-overlay" style="display: none;">
+        <div class="modal-content" style="max-width: 520px;">
+            <button id="avance-cerrar" class="modal-cerrar" aria-label="Cerrar">&times;</button>
+            <h2 id="avance-titulo" style="margin-top: 0;">Actualizar estado</h2>
+
+            <label for="avance-estado">Nuevo estado</label>
+            <select id="avance-estado"
+                    style="width: 100%; padding: 10px; border: 1px solid #cbd5e0; border-radius: 4px; box-sizing: border-box; background-color: white;">
+                <option value="EN DIAGNÓSTICO">En diagnóstico</option>
+                <option value="FINALIZADA">Finalizada</option>
+            </select>
+
+            <div id="avance-diagnostico-caja" style="margin-top: 15px;">
+                <label for="avance-diagnostico">Diagnóstico (opcional)</label>
+                <textarea id="avance-diagnostico" rows="5" maxlength="2000"></textarea>
+            </div>
+
+            <div id="avance-mensaje" style="display: none; margin-top: 15px; padding: 10px 12px; border-radius: 4px; background-color: #fed7d7; color: #742a2a;"></div>
+
+            <div style="margin-top: 20px; text-align: right;">
+                <button type="button" id="avance-cancelar" class="btn-primary" style="background-color: #4a5568; margin-right: 10px;">Cancelar</button>
+                <button type="button" id="avance-guardar" class="btn-primary">Guardar</button>
+            </div>
         </div>
     </div>
 

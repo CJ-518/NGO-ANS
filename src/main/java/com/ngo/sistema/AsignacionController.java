@@ -75,8 +75,11 @@ public class AsignacionController {
             asignacionRepo.save(nueva); // las asignaciones anteriores quedan como historial
         }
 
-        // Al asignar técnico, una solicitud recién recibida pasa a ASIGNADA
-        if ("RECIBIDA".equals(solicitud.getEstadoActual())) {
+        // El estado refleja la asignación: al asignar (o reasignar) un técnico la solicitud queda
+        // en ASIGNADA. Una solicitud ya FINALIZADA no se reabre.
+        String estado = solicitud.getEstadoActual();
+        boolean finalizada = "FINALIZADA".equals(estado);
+        if (!finalizada && (!yaAsignado || "RECIBIDA".equals(estado))) {
             solicitud.setEstadoActual("ASIGNADA");
             solicitudRepo.save(solicitud);
         }

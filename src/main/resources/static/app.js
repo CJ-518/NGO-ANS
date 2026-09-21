@@ -1,4 +1,5 @@
 let rolActual = null;
+let idUsuarioActual = null;
 let tecnicos = []; // técnicos activos, para el selector de asignación
 
 async function cargarUsuarioActual() {
@@ -7,6 +8,7 @@ async function cargarUsuarioActual() {
         if (!res.ok) return;
         const u = await res.json();
         rolActual = u.rol;
+        idUsuarioActual = u.idUsuario;
         const span = document.getElementById('usuario-actual');
         if (span) span.textContent = `${u.nombre} (${u.rol})`;
 
@@ -22,10 +24,10 @@ async function cargarUsuarioActual() {
             btnUsuarios.style.display = 'inline-block';
         }
 
-        // La columna "Acciones" solo tiene el botón Eliminar, exclusivo del ADMINISTRADOR:
-        // para el resto de los roles no se muestra.
+        // La columna "Acciones" tiene botones solo para el ADMINISTRADOR (Eliminar) y el TECNICO
+        // (Actualizar estado). Para el FUNCIONARIO no se muestra.
         const thAcciones = document.getElementById('th-acciones');
-        if (thAcciones && rolActual !== 'ADMINISTRADOR') {
+        if (thAcciones && !tieneColumnaAcciones()) {
             thAcciones.style.display = 'none';
         }
 
@@ -64,6 +66,11 @@ document.addEventListener('DOMContentLoaded', async () => {
             eliminarSolicitud(btnEliminar.dataset.id);
             return;
         }
+        const btnAvance = e.target.closest('button.btn-avance');
+        if (btnAvance) {
+            abrirAvance(btnAvance.dataset.id);
+            return;
+        }
         if (e.target.closest('select')) return;
         const fila = e.target.closest('tr[data-id]');
         if (fila) abrirDetalle(fila.dataset.id);
@@ -76,9 +83,141 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (e.target === modal) cerrarDetalle();
     });
     document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape') cerrarDetalle();
+        if (e.key === 'Escape') {
+            cerrarDetalle();
+            cerrarAvance();
+        }
     });
+
+    // Ventana "Actualizar estado" del técnico
+    document.getElementById('avance-cerrar').addEventListener('click', cerrarAvance);
+    document.getElementById('avance-cancelar').addEventListener('click', cerrarAvance);
+    document.getElementById('avance-guardar').addEventListener('click', guardarAvance);
+    document.getElementById('avance-estado').addEventListener('change', actualizarCajaDiagnostico);
 });
+
+// La columna "Acciones" existe para quien tiene botones en ella
+function tieneColumnaAcciones() {
+    return rolActual === 'ADMINISTRADOR' || rolActual === 'TECNICO';
+}
+
+// ---------- Ventana "Actualizar estado" (TECNICO) ----------
+
+let avanceIdSolicitud = null;
+
+function abrirAvance(id) {
+    avanceIdSolicitud = id;
+    document.getElementById('avance-titulo').textContent = `Actualizar estado de ST-${id}`;
+    document.getElementById('avance-estado').value = 'EN DIAGNÓSTICO';
+    document.getElementById('avance-diagnostico').value = '';
+    document.getElementById('avance-mensaje').style.display = 'none';
+    actualizarCajaDiagnostico();
+    document.getElementById('modal-avance').style.display = 'flex';
+}
+
+function cerrarAvance() {
+    document.getElementById('modal-avance').style.display = 'none';
+    avanceIdSolicitud = null;
+}
+
+// El texto del diagnóstico solo aplica cuando el nuevo estado es EN DIAGNÓSTICO
+function actualizarCajaDiagnostico() {
+    const esDiagnostico = document.getElementById('avance-estado').value === 'EN DIAGNÓSTICO';
+    document.getElementById('avance-diagnostico-caja').style.display = esDiagnostico ? 'block' : 'none';
+}
+
+function mostrarMensajeAvance(texto) {
+    const caja = document.getElementById('avance-mensaje');
+    caja.textContent = texto;
+    caja.style.display = 'block';
+}
+
+async function guardarAvance() {
+    const id = avanceIdSolicitud;
+    if (!id) return;
+
+    const estado = document.getElementById('avance-estado').value;
+    const finaliza = estado === 'FINALIZADA';
+
+    if (finaliza && !confirm(`¿Finalizar la solicitud ST-${id}?\n\nUna vez finalizada, ya no podrás cambiar su estado.`)) {
+        return;
+    }
+
+    const url = finaliza ? `/api/solicitudes/${id}/finalizar` : `/api/solicitudes/${id}/diagnostico`;
+    const cuerpo = finaliza ? {} : { diagnostico: document.getElementById('avance-diagnostico').value };
+    const filtro = document.getElementById('buscar-documento').value;
+    const boton = document.getElementById('avance-guardar');
+    boton.disabled = true; // evita enviar dos veces
+
+    try {
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(cuerpo)
+        });
+
+        if (response.ok) {
+            cerrarAvance();
+            cargarSolicitudes(filtro); // la tabla refleja el nuevo estado
+        } else {
+            let mensaje = null;
+            try { mensaje = (await response.json()).error; } catch (e) { /* sin JSON */ }
+            if (!mensaje) {
+                mensaje = response.status === 403
+                    ? 'No tenés permiso para cambiar el estado de esta solicitud.'
+                    : 'No se pudo actualizar el estado.';
+            }
+            mostrarMensajeAvance(mensaje);
+            if (response.status === 403 || response.status === 409) cargarSolicitudes(filtro); // datos desactualizados
+        }
+    } catch (error) {
+        console.error('Error actualizando el estado:', error);
+        mostrarMensajeAvance('Error de conexión al actualizar el estado.');
+    } finally {
+        boton.disabled = false;
+    }
+}
+
+// ---------- Seguimiento (historial) en el detalle ----------
+
+function dibujarRegistro(registro) {
+    const bloque = document.createElement('div');
+    bloque.style.cssText = 'padding: 8px 0; border-bottom: 1px solid #e2e8f0;';
+
+    const estado = document.createElement('strong');
+    estado.textContent = registro.estado;
+
+    const cabecera = document.createElement('div');
+    const cuando = registro.fecha ? new Date(registro.fecha).toLocaleString('es-PY') : '';
+    // append() con un texto lo agrega como texto plano, no como HTML
+    cabecera.append(estado, ` · ${cuando} · ${registro.usuario || ''}`);
+    bloque.append(cabecera);
+
+    if (registro.diagnostico) {
+        const texto = document.createElement('div');
+        texto.textContent = registro.diagnostico;
+        texto.style.cssText = 'margin-top: 4px; white-space: pre-wrap; color: #2d3748;';
+        bloque.append(texto);
+    }
+    return bloque;
+}
+
+async function cargarSeguimiento(id) {
+    const caja = document.getElementById('detalle-seguimiento');
+    try {
+        const res = await fetch(`/api/solicitudes/${id}/seguimiento`);
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        const registros = await res.json();
+        if (registros.length === 0) {
+            caja.textContent = 'Todavía no hay registros de seguimiento.';
+        } else {
+            caja.replaceChildren(...registros.map(dibujarRegistro));
+        }
+    } catch (error) {
+        console.error('Error cargando el seguimiento:', error);
+        caja.textContent = 'No se pudo cargar el seguimiento.';
+    }
+}
 
 // Evita que un texto de la base de datos se interprete como HTML
 function escaparHtml(texto) {
@@ -211,6 +350,8 @@ async function abrirDetalle(id) {
             if (i < limite && lines[i]) lines[i].classList.add('active');
         }
 
+        await cargarSeguimiento(id);
+
         modal.style.display = 'flex';
     } catch (error) {
         console.error('Error consultando la solicitud:', error);
@@ -234,7 +375,7 @@ function cargarSolicitudes(documento = '') {
             }
 
             if (data.length === 0) {
-                const columnas = rolActual === 'ADMINISTRADOR' ? 8 : 7;
+                const columnas = tieneColumnaAcciones() ? 8 : 7;
                 tableBody.innerHTML = `<tr><td colspan="${columnas}">No se encontraron solicitudes para ese documento.</td></tr>`;
                 return;
             }
@@ -289,10 +430,18 @@ function cargarSolicitudes(documento = '') {
                         : `<span style="color: #718096;">Sin asignar</span>`;
                 }
 
-                // La columna Acciones (botón Eliminar) solo existe para el ADMINISTRADOR
-                const celdaAcciones = rolActual === 'ADMINISTRADOR'
-                    ? `<td><button class="btn-primary btn-eliminar" data-id="${solicitud.idSolicitud}" style="background-color: #c53030; padding: 6px 12px; font-size: 14px;">Eliminar</button></td>`
-                    : '';
+                // Columna Acciones: el ADMINISTRADOR elimina; el TECNICO actualiza el estado de SUS solicitudes
+                // (asignadas a él y todavía no finalizadas); el FUNCIONARIO no tiene columna.
+                let celdaAcciones = '';
+                if (rolActual === 'ADMINISTRADOR') {
+                    celdaAcciones = `<td><button class="btn-primary btn-eliminar" data-id="${solicitud.idSolicitud}" style="background-color: #c53030; padding: 6px 12px; font-size: 14px;">Eliminar</button></td>`;
+                } else if (rolActual === 'TECNICO') {
+                    const esMia = asignado && idUsuarioActual !== null && asignado.idUsuario === idUsuarioActual;
+                    const puedeAvanzar = esMia && solicitud.estadoActual !== 'FINALIZADA';
+                    celdaAcciones = puedeAvanzar
+                        ? `<td><button class="btn-primary btn-avance" data-id="${solicitud.idSolicitud}" style="padding: 6px 12px; font-size: 14px;">Actualizar estado</button></td>`
+                        : '<td></td>';
+                }
 
                 const row = `<tr class="fila-solicitud" data-id="${solicitud.idSolicitud}">
                     <td>ST-${solicitud.idSolicitud}</td>

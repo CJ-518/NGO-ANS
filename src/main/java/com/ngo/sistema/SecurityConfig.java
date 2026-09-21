@@ -39,15 +39,20 @@ public class SecurityConfig {
                 .requestMatchers("/usuarios.html", "/usuarios.js").hasRole("ADMINISTRADOR")
 
                 // TECNICO no puede dar de alta clientes/productos/solicitudes nuevas,
-                // ni cambiar el estado de una solicitud: eso queda para ADMINISTRADOR y FUNCIONARIO.
+                // ni cambiar el estado de cualquier solicitud: eso queda para ADMINISTRADOR y FUNCIONARIO.
+                // (El TECNICO solo avanza las solicitudes que tiene asignadas: /diagnostico y /finalizar.)
                 .requestMatchers(HttpMethod.POST, "/api/clientes").hasAnyRole("ADMINISTRADOR", "FUNCIONARIO")
                 .requestMatchers(HttpMethod.POST, "/api/productos").hasAnyRole("ADMINISTRADOR", "FUNCIONARIO")
                 .requestMatchers(HttpMethod.POST, "/api/solicitudes").hasAnyRole("ADMINISTRADOR", "FUNCIONARIO")
                 .requestMatchers(HttpMethod.PUT, "/api/solicitudes/*/estado").hasAnyRole("ADMINISTRADOR", "FUNCIONARIO")
 
-                // Asignar técnico y registrar diagnóstico: ADMINISTRADOR o FUNCIONARIO
+                // Asignar técnico: ADMINISTRADOR o FUNCIONARIO
                 .requestMatchers(HttpMethod.POST, "/api/solicitudes/*/asignar").hasAnyRole("ADMINISTRADOR", "FUNCIONARIO")
-                .requestMatchers(HttpMethod.POST, "/api/solicitudes/*/diagnostico").hasAnyRole("ADMINISTRADOR", "FUNCIONARIO", "TECNICO")
+
+                // Registrar diagnóstico y finalizar: solo el TECNICO (el controlador además exige que
+                // la solicitud esté asignada a ese técnico)
+                .requestMatchers(HttpMethod.POST, "/api/solicitudes/*/diagnostico").hasRole("TECNICO")
+                .requestMatchers(HttpMethod.POST, "/api/solicitudes/*/finalizar").hasRole("TECNICO")
 
                 // Todo lo demás (panel, resto de la API de lectura) requiere estar logueado
                 .anyRequest().authenticated()

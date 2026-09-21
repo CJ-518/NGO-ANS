@@ -24,12 +24,13 @@ public class SistemaController {
     @Autowired
     private GarantiaRepository garantiaRepo;
 
-    // Identidad del usuario logueado: nombre, correo y rol, para que app.js
-    // pinte el header y muestre/oculte botones según el rol.
+    // Identidad del usuario logueado: id, nombre, correo y rol, para que app.js
+    // pinte el header y muestre/oculte botones según el rol (y sepa cuáles son "sus" solicitudes).
     @GetMapping("/usuario/actual")
-    public Map<String, String> usuarioActual(@AuthenticationPrincipal UsuarioPrincipal principal) {
+    public Map<String, Object> usuarioActual(@AuthenticationPrincipal UsuarioPrincipal principal) {
         Usuario u = principal.getUsuario();
         return Map.of(
+                "idUsuario", u.getIdUsuario(),
                 "nombre", u.getNombre(),
                 "correo", u.getCorreo(),
                 "rol", u.getRol().getNombre()
