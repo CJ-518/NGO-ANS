@@ -1,5 +1,6 @@
 package com.ngo.sistema;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 
 @Entity
@@ -24,6 +25,9 @@ public class Usuario {
     @Column(nullable = false, unique = true, length = 100)
     private String correo;
 
+    // Nunca debe viajar al frontend: si en el futuro se serializa un Usuario completo
+    // (por ejemplo, anidado dentro de una Venta como "vendedor"), el hash no se expone.
+    @JsonIgnore
     @Column(nullable = false, length = 255)
     private String clave;
 

@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NGO SAECA - Portal de Ventas</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header>
+        <div class="logo">NGO SAECA</div>
+        <div class="user-role">Portal de Ventas</div>
+    </header>
+
+    <main>
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <h1>Portal de Ventas</h1>
+            <a href="index.html" style="text-decoration: none; color: #1a365d; font-weight: bold;">&larr; Volver al Panel</a>
+        </div>
+
+        <!-- Alta de artículo (solo lo ve el ADMINISTRADOR) -->
+        <div id="seccion-nuevo-articulo" class="card form-section" style="display: none;">
+            <h2>Nuevo artículo</h2>
+            <form id="articulo-form" class="form-grid">
+                <div>
+                    <label for="art-nombre">Nombre</label>
+                    <input type="text" id="art-nombre" maxlength="100" required>
+                </div>
+                <div>
+                    <label for="art-categoria">Categoría</label>
+                    <input type="text" id="art-categoria" maxlength="50">
+                </div>
+                <div>
+                    <label for="art-precio">Precio</label>
+                    <input type="text" id="art-precio" inputmode="decimal" required>
+                </div>
+                <div>
+                    <label for="art-stock">Stock inicial</label>
+                    <input type="text" id="art-stock" inputmode="numeric" value="0" required>
+                </div>
+                <div style="grid-column: 1 / -1;">
+                    <label for="art-descripcion">Descripción</label>
+                    <input type="text" id="art-descripcion" maxlength="255">
+                </div>
+            </form>
+            <div id="articulo-mensaje" style="display: none; margin-top: 15px; padding: 10px 12px; border-radius: 4px;"></div>
+            <div style="margin-top: 15px; text-align: right;">
+                <button type="submit" form="articulo-form" class="btn-primary">Agregar al catálogo</button>
+            </div>
+        </div>
+
+        <h2>Catálogo / Stock disponible</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Artículo</th>
+                    <th>Categoría</th>
+                    <th>Precio</th>
+                    <th>Stock</th>
+                    <th>Cantidad</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody id="articulos-body">
+                <!-- JavaScript inyecta las filas -->
+            </tbody>
+        </table>
+
+        <h2>Carrito</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Artículo</th>
+                    <th>Cantidad</th>
+                    <th>Precio unit.</th>
+                    <th>Subtotal</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody id="carrito-body">
+                <tr id="carrito-vacio"><td colspan="5" style="color: #a0aec0;">El carrito está vacío.</td></tr>
+            </tbody>
+        </table>
+        <div style="text-align: right; margin: 15px 0; font-size: 20px;">
+            <strong>Total: <span id="carrito-total">Gs. 0</span></strong>
+        </div>
+        <div id="venta-mensaje" style="display: none; margin-bottom: 15px; padding: 10px 12px; border-radius: 4px;"></div>
+        <div style="text-align: right; margin-bottom: 30px;">
+            <button type="button" id="btn-confirmar-venta" class="btn-primary">Confirmar venta</button>
+        </div>
+
+        <h2>Ventas recientes</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>N°</th>
+                    <th>Fecha</th>
+                    <th>Vendedor</th>
+                    <th>Artículos</th>
+                    <th>Total</th>
+                </tr>
+            </thead>
+            <tbody id="ventas-body">
+                <!-- JavaScript inyecta las filas -->
+            </tbody>
+        </table>
+    </main>
+
+    <script src="sesion.js"></script>
+    <script src="portal-ventas.js"></script>
+</body>
+</html>

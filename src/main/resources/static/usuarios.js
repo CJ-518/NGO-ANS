@@ -1,7 +1,8 @@
 const ROLES_LEGIBLES = {
     ADMINISTRADOR: 'Administrador',
     FUNCIONARIO: 'Funcionario',
-    TECNICO: 'Técnico'
+    TECNICO: 'Técnico',
+    VENDEDOR: 'Vendedor'
 };
 
 const nombreDeRol = (rol) => ROLES_LEGIBLES[rol] || rol || '';

@@ -12,9 +12,10 @@ async function cargarUsuarioActual() {
         const span = document.getElementById('usuario-actual');
         if (span) span.textContent = `${u.nombre} (${u.rol})`;
 
-        // El botón "Nueva solicitud" del header no lo puede usar un TECNICO.
+        // El botón "Nueva solicitud" del header no lo puede usar un TECNICO ni un VENDEDOR
+        // (el VENDEDOR trabaja desde el Portal de Ventas, no desde garantías/servicio técnico).
         const btnNueva = document.getElementById('btn-nueva-solicitud');
-        if (btnNueva && rolActual === 'TECNICO') {
+        if (btnNueva && (rolActual === 'TECNICO' || rolActual === 'VENDEDOR')) {
             btnNueva.style.display = 'none';
         }
 
@@ -22,6 +23,12 @@ async function cargarUsuarioActual() {
         const btnUsuarios = document.getElementById('btn-usuarios');
         if (btnUsuarios && rolActual === 'ADMINISTRADOR') {
             btnUsuarios.style.display = 'inline-block';
+        }
+
+        // El Portal de Ventas lo usan el VENDEDOR y el ADMINISTRADOR.
+        const btnVentas = document.getElementById('btn-ventas');
+        if (btnVentas && (rolActual === 'VENDEDOR' || rolActual === 'ADMINISTRADOR')) {
+            btnVentas.style.display = 'inline-block';
         }
 
         // La columna "Acciones" tiene botones solo para el ADMINISTRADOR (Eliminar) y el TECNICO

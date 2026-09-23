@@ -38,6 +38,14 @@ public class SecurityConfig {
                 .requestMatchers("/api/usuarios/**").hasRole("ADMINISTRADOR")
                 .requestMatchers("/usuarios.html", "/usuarios.js").hasRole("ADMINISTRADOR")
 
+                // Portal de ventas: lo usan el VENDEDOR y el ADMINISTRADOR
+                .requestMatchers("/portal-ventas.html", "/portal-ventas.js").hasAnyRole("VENDEDOR", "ADMINISTRADOR")
+                .requestMatchers(HttpMethod.POST, "/api/ventas").hasAnyRole("VENDEDOR", "ADMINISTRADOR")
+                .requestMatchers(HttpMethod.GET, "/api/ventas").hasAnyRole("VENDEDOR", "ADMINISTRADOR")
+                // Alta de artículos y corrección de stock: solo ADMINISTRADOR
+                .requestMatchers(HttpMethod.POST, "/api/articulos").hasRole("ADMINISTRADOR")
+                .requestMatchers(HttpMethod.PUT, "/api/articulos/*/stock").hasRole("ADMINISTRADOR")
+
                 // TECNICO no puede dar de alta clientes/productos/solicitudes nuevas,
                 // ni cambiar el estado de cualquier solicitud: eso queda para ADMINISTRADOR y FUNCIONARIO.
                 // (El TECNICO solo avanza las solicitudes que tiene asignadas: /diagnostico y /finalizar.)

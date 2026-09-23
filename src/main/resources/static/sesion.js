@@ -7,7 +7,8 @@
     const ROLES_LEGIBLES = {
         ADMINISTRADOR: 'Administrador',
         FUNCIONARIO: 'Funcionario',
-        TECNICO: 'Técnico'
+        TECNICO: 'Técnico',
+        VENDEDOR: 'Vendedor'
     };
 
     let usuario;
