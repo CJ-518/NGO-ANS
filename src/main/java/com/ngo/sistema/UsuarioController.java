@@ -17,7 +17,7 @@ import java.util.regex.Pattern;
 
 /**
  * Administración de usuarios: solo ADMINISTRADOR puede listar usuarios y dar de alta
- * funcionarios y técnicos. (SecurityConfig también protege /api/usuarios/**.)
+ * personal de Atención y técnicos. (SecurityConfig también protege /api/usuarios/**.)
  */
 @RestController
 @RequestMapping("/api/usuarios")
@@ -25,7 +25,7 @@ import java.util.regex.Pattern;
 public class UsuarioController {
 
     // Roles que se pueden dar de alta desde el sistema
-    private static final Set<String> ROLES_PERMITIDOS = Set.of("FUNCIONARIO", "TECNICO", "VENDEDOR");
+    private static final Set<String> ROLES_PERMITIDOS = Set.of("ATENCION", "TECNICO", "VENDEDOR");
 
     private static final Pattern CORREO = Pattern.compile("^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$");
     private static final int CLAVE_MIN_CARACTERES = 8;
@@ -74,7 +74,7 @@ public class UsuarioController {
             return error(HttpStatus.BAD_REQUEST, "La contraseña es demasiado larga.");
         }
         if (!ROLES_PERMITIDOS.contains(nombreRol)) {
-            return error(HttpStatus.BAD_REQUEST, "El rol debe ser FUNCIONARIO, TECNICO o VENDEDOR.");
+            return error(HttpStatus.BAD_REQUEST, "El rol debe ser ATENCION, TECNICO o VENDEDOR.");
         }
         if (usuarioRepo.existsByCorreoIgnoreCase(correo)) {
             return error(HttpStatus.CONFLICT, "Ya existe un usuario con ese correo.");

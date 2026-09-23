@@ -10,7 +10,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Asignación de técnicos a solicitudes. Pueden asignar el ADMINISTRADOR y el FUNCIONARIO
+ * Asignación de técnicos a solicitudes. Pueden asignar el ADMINISTRADOR y el ATENCION
  * (SecurityConfig también protege POST /api/solicitudes/{id}/asignar).
  */
 @RestController
@@ -33,7 +33,7 @@ public class AsignacionController {
     private AsignacionRepository asignacionRepo;
 
     // Lista de técnicos activos, para el selector de la tabla
-    @PreAuthorize("hasAnyRole('ADMINISTRADOR', 'FUNCIONARIO')")
+    @PreAuthorize("hasAnyRole('ADMINISTRADOR', 'ATENCION')")
     @GetMapping("/tecnicos")
     public List<TecnicoResumen> listarTecnicos() {
         return usuarioRepo.findByRolNombreAndEstadoOrderByNombreAsc("TECNICO", "ACTIVO").stream()
@@ -41,7 +41,7 @@ public class AsignacionController {
                 .toList();
     }
 
-    @PreAuthorize("hasAnyRole('ADMINISTRADOR', 'FUNCIONARIO')")
+    @PreAuthorize("hasAnyRole('ADMINISTRADOR', 'ATENCION')")
     @PostMapping("/solicitudes/{id}/asignar")
     public ResponseEntity<?> asignar(@PathVariable Long id, @RequestBody NuevaAsignacion datos) {
         if (datos.idTecnico() == null) {

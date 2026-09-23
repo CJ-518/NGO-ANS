@@ -10,6 +10,7 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 
 @Configuration
 @EnableWebSecurity
@@ -19,6 +20,18 @@ public class SecurityConfig {
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
+    }
+
+    // Redirección post-login según el rol: el VENDEDOR entra directo al Portal de Ventas
+    // (no ve el panel de garantías/servicio técnico); el resto va al panel general.
+    @Bean
+    public AuthenticationSuccessHandler authenticationSuccessHandler() {
+        return (request, response, authentication) -> {
+            boolean esVendedor = authentication.getAuthorities().stream()
+                    .anyMatch(autoridad -> "ROLE_VENDEDOR".equals(autoridad.getAuthority()));
+            String destino = esVendedor ? "/portal-ventas.html" : "/index.html";
+            response.sendRedirect(request.getContextPath() + destino);
+        };
     }
 
     @Bean
@@ -47,15 +60,16 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.PUT, "/api/articulos/*/stock").hasRole("ADMINISTRADOR")
 
                 // TECNICO no puede dar de alta clientes/productos/solicitudes nuevas,
-                // ni cambiar el estado de cualquier solicitud: eso queda para ADMINISTRADOR y FUNCIONARIO.
+                // ni cambiar el estado de cualquier solicitud: eso queda para ADMINISTRADOR y ATENCION.
                 // (El TECNICO solo avanza las solicitudes que tiene asignadas: /diagnostico y /finalizar.)
-                .requestMatchers(HttpMethod.POST, "/api/clientes").hasAnyRole("ADMINISTRADOR", "FUNCIONARIO")
-                .requestMatchers(HttpMethod.POST, "/api/productos").hasAnyRole("ADMINISTRADOR", "FUNCIONARIO")
-                .requestMatchers(HttpMethod.POST, "/api/solicitudes").hasAnyRole("ADMINISTRADOR", "FUNCIONARIO")
-                .requestMatchers(HttpMethod.PUT, "/api/solicitudes/*/estado").hasAnyRole("ADMINISTRADOR", "FUNCIONARIO")
+                // El VENDEDOR también puede registrar clientes: los carga desde el Portal de Ventas.
+                .requestMatchers(HttpMethod.POST, "/api/clientes").hasAnyRole("ADMINISTRADOR", "ATENCION", "VENDEDOR")
+                .requestMatchers(HttpMethod.POST, "/api/productos").hasAnyRole("ADMINISTRADOR", "ATENCION")
+                .requestMatchers(HttpMethod.POST, "/api/solicitudes").hasAnyRole("ADMINISTRADOR", "ATENCION")
+                .requestMatchers(HttpMethod.PUT, "/api/solicitudes/*/estado").hasAnyRole("ADMINISTRADOR", "ATENCION")
 
-                // Asignar técnico: ADMINISTRADOR o FUNCIONARIO
-                .requestMatchers(HttpMethod.POST, "/api/solicitudes/*/asignar").hasAnyRole("ADMINISTRADOR", "FUNCIONARIO")
+                // Asignar técnico: ADMINISTRADOR o ATENCION
+                .requestMatchers(HttpMethod.POST, "/api/solicitudes/*/asignar").hasAnyRole("ADMINISTRADOR", "ATENCION")
 
                 // Registrar diagnóstico y finalizar: solo el TECNICO (el controlador además exige que
                 // la solicitud esté asignada a ese técnico)
@@ -68,7 +82,7 @@ public class SecurityConfig {
             .formLogin(form -> form
                 .loginPage("/login.html")
                 .loginProcessingUrl("/login")
-                .defaultSuccessUrl("/index.html", true)
+                .successHandler(authenticationSuccessHandler())
                 .failureUrl("/login.html?error")
                 .permitAll()
             )

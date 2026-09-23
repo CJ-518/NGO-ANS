@@ -32,14 +32,14 @@ async function cargarUsuarioActual() {
         }
 
         // La columna "Acciones" tiene botones solo para el ADMINISTRADOR (Eliminar) y el TECNICO
-        // (Actualizar estado). Para el FUNCIONARIO no se muestra.
+        // (Actualizar estado). Para el rol ATENCION no se muestra.
         const thAcciones = document.getElementById('th-acciones');
         if (thAcciones && !tieneColumnaAcciones()) {
             thAcciones.style.display = 'none';
         }
 
-        // Quienes pueden asignar (ADMINISTRADOR y FUNCIONARIO) necesitan la lista de técnicos.
-        if (rolActual === 'ADMINISTRADOR' || rolActual === 'FUNCIONARIO') {
+        // Quienes pueden asignar (ADMINISTRADOR y ATENCION) necesitan la lista de técnicos.
+        if (rolActual === 'ADMINISTRADOR' || rolActual === 'ATENCION') {
             await cargarTecnicos();
         }
     } catch (error) {
@@ -390,10 +390,10 @@ function cargarSolicitudes(documento = '') {
             // Definir los estados oficiales del diagrama
             const estados = ['RECIBIDA', 'ASIGNADA', 'EN DIAGNÓSTICO', 'FINALIZADA'];
 
-            // Puede cambiar el estado: ADMINISTRADOR y FUNCIONARIO. TECNICO solo lo ve (texto fijo).
-            const puedeCambiarEstado = rolActual === 'ADMINISTRADOR' || rolActual === 'FUNCIONARIO';
+            // Puede cambiar el estado: ADMINISTRADOR y ATENCION. TECNICO solo lo ve (texto fijo).
+            const puedeCambiarEstado = rolActual === 'ADMINISTRADOR' || rolActual === 'ATENCION';
             // Asignar técnicos: mismos roles que pueden cambiar el estado.
-            const puedeAsignar = rolActual === 'ADMINISTRADOR' || rolActual === 'FUNCIONARIO';
+            const puedeAsignar = rolActual === 'ADMINISTRADOR' || rolActual === 'ATENCION';
 
             data.forEach(solicitud => {
                 const date = new Date(solicitud.fecha).toLocaleDateString('es-PY');
@@ -413,7 +413,7 @@ function cargarSolicitudes(documento = '') {
                     estadoHtml = `<span class="estado-select" style="display:inline-block; cursor: default;">${solicitud.estadoActual}</span>`;
                 }
 
-                // Técnico asignado: ADMINISTRADOR y FUNCIONARIO lo eligen con un selector; el TECNICO solo lo ve
+                // Técnico asignado: ADMINISTRADOR y ATENCION lo eligen con un selector; el TECNICO solo lo ve
                 const asignado = solicitud.tecnicoAsignado;
                 let tecnicoHtml;
                 if (puedeAsignar) {
@@ -438,7 +438,7 @@ function cargarSolicitudes(documento = '') {
                 }
 
                 // Columna Acciones: el ADMINISTRADOR elimina; el TECNICO actualiza el estado de SUS solicitudes
-                // (asignadas a él y todavía no finalizadas); el FUNCIONARIO no tiene columna.
+                // (asignadas a él y todavía no finalizadas); el rol ATENCION no tiene columna.
                 let celdaAcciones = '';
                 if (rolActual === 'ADMINISTRADOR') {
                     celdaAcciones = `<td><button class="btn-primary btn-eliminar" data-id="${solicitud.idSolicitud}" style="background-color: #c53030; padding: 6px 12px; font-size: 14px;">Eliminar</button></td>`;

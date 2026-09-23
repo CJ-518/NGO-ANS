@@ -3,6 +3,9 @@ let articulos = [];
 // carrito: Map idArticulo -> { articulo, cantidad }
 const carrito = new Map();
 
+const REGEX_DOCUMENTO = /^[0-9]+$/;
+const REGEX_TELEFONO = /^\+?[0-9]+$/;
+
 const formatoGs = (numero) => 'Gs. ' + Number(numero).toLocaleString('es-PY', { maximumFractionDigits: 0 });
 
 function mostrarMensaje(elementoId, texto, tipo) {
@@ -26,6 +29,11 @@ async function cargarUsuarioActual() {
         rolActual = u.rol;
         if (rolActual === 'ADMINISTRADOR') {
             document.getElementById('seccion-nuevo-articulo').style.display = 'block';
+        }
+        // El VENDEDOR trabaja únicamente desde el Portal de Ventas: no tiene otro panel al que volver.
+        if (rolActual === 'VENDEDOR') {
+            const linkVolver = document.getElementById('link-volver-panel');
+            if (linkVolver) linkVolver.style.display = 'none';
         }
     } catch (error) {
         console.error('Error cargando el usuario actual:', error);
@@ -164,12 +172,78 @@ function pintarCarrito() {
     document.getElementById('carrito-total').textContent = formatoGs(total);
 }
 
+// ---------- Datos del cliente ----------
+
+// Lee y limpia (trim) los cuatro campos del formulario de cliente.
+function leerDatosCliente() {
+    return {
+        documento: document.getElementById('cli-documento').value.trim(),
+        nombre: document.getElementById('cli-nombre').value.trim(),
+        telefono: document.getElementById('cli-telefono').value.trim(),
+        correo: document.getElementById('cli-correo').value.trim()
+    };
+}
+
+function limpiarFormularioCliente() {
+    document.getElementById('cli-documento').value = '';
+    document.getElementById('cli-nombre').value = '';
+    document.getElementById('cli-telefono').value = '';
+    document.getElementById('cli-correo').value = '';
+}
+
+// Valida los datos del cliente. Los cuatro campos vacíos = venta a consumidor final (válido).
+// Si se completa alguno, documento/nombre/teléfono pasan a ser obligatorios.
+// Devuelve { valido, datos, esConsumidorFinal } o { valido: false } con el mensaje ya mostrado.
+function validarDatosCliente(datos) {
+    const hayAlgunDato = datos.documento || datos.nombre || datos.telefono || datos.correo;
+
+    if (!hayAlgunDato) {
+        return { valido: true, esConsumidorFinal: true, datos: null };
+    }
+
+    if (!datos.documento || !REGEX_DOCUMENTO.test(datos.documento)) {
+        mostrarMensaje('cliente-mensaje', 'El documento del cliente es obligatorio y solo puede contener números.', 'error');
+        return { valido: false };
+    }
+    if (!datos.nombre) {
+        mostrarMensaje('cliente-mensaje', 'El nombre del cliente es obligatorio.', 'error');
+        return { valido: false };
+    }
+    if (!datos.telefono || !REGEX_TELEFONO.test(datos.telefono)) {
+        mostrarMensaje('cliente-mensaje', 'El teléfono del cliente es obligatorio (solo números, con un "+" opcional al inicio).', 'error');
+        return { valido: false };
+    }
+
+    return { valido: true, esConsumidorFinal: false, datos };
+}
+
+// Guarda el cliente en el sistema (POST /api/clientes) y devuelve el cliente creado.
+async function guardarCliente(datosCliente) {
+    const res = await fetch('/api/clientes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(datosCliente)
+    });
+    if (!res.ok) {
+        throw new Error('No se pudo guardar el cliente (HTTP ' + res.status + ')');
+    }
+    return res.json();
+}
+
+// ---------- Venta ----------
+
 async function confirmarVenta() {
     ocultarMensaje('venta-mensaje');
+    ocultarMensaje('cliente-mensaje');
 
     if (carrito.size === 0) {
         mostrarMensaje('venta-mensaje', 'Agregá al menos un artículo antes de confirmar la venta.', 'error');
         return;
+    }
+
+    const validacion = validarDatosCliente(leerDatosCliente());
+    if (!validacion.valido) {
+        return; // el mensaje de error ya se mostró en validarDatosCliente
     }
 
     const items = Array.from(carrito.values()).map(({ articulo, cantidad }) => ({
@@ -177,11 +251,30 @@ async function confirmarVenta() {
         cantidad
     }));
 
+    const btnConfirmar = document.getElementById('btn-confirmar-venta');
+    btnConfirmar.disabled = true; // evita registrar la misma venta dos veces por doble clic
+
     try {
+        let idCliente = null;
+
+        // Si se cargaron datos del cliente, primero se registra como cliente del sistema
+        // (igual que en "Nueva solicitud"), y recién después se registra la venta.
+        if (!validacion.esConsumidorFinal) {
+            let clienteGuardado;
+            try {
+                clienteGuardado = await guardarCliente(validacion.datos);
+            } catch (error) {
+                console.error('Error guardando el cliente:', error);
+                mostrarMensaje('cliente-mensaje', 'No se pudo guardar el cliente. Revisá los datos e intentá de nuevo.', 'error');
+                return;
+            }
+            idCliente = clienteGuardado.idCliente;
+        }
+
         const res = await fetch('/api/ventas', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ items })
+            body: JSON.stringify({ idCliente, items })
         });
 
         if (!res.ok) {
@@ -192,11 +285,14 @@ async function confirmarVenta() {
 
         carrito.clear();
         pintarCarrito();
+        limpiarFormularioCliente();
         mostrarMensaje('venta-mensaje', 'Venta registrada correctamente.', 'exito');
         await Promise.all([cargarArticulos(), cargarVentas()]);
     } catch (error) {
         console.error('Error registrando la venta:', error);
         mostrarMensaje('venta-mensaje', 'Error de conexión al registrar la venta.', 'error');
+    } finally {
+        btnConfirmar.disabled = false;
     }
 }
 
@@ -216,7 +312,7 @@ function pintarVentas(ventas) {
     tbody.innerHTML = '';
 
     if (ventas.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="5" style="color: #a0aec0;">Todavía no hay ventas registradas.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="6" style="color: #a0aec0;">Todavía no hay ventas registradas.</td></tr>';
         return;
     }
 
@@ -225,8 +321,9 @@ function pintarVentas(ventas) {
 
         const cantidadArticulos = (venta.detalles || []).reduce((suma, d) => suma + d.cantidad, 0);
         const fecha = venta.fecha ? new Date(venta.fecha).toLocaleString('es-PY') : '-';
+        const cliente = venta.cliente ? venta.cliente.nombre : 'Consumidor final';
 
-        [venta.idVenta, fecha, venta.vendedor ? venta.vendedor.nombre : '-', cantidadArticulos, formatoGs(venta.total)]
+        [venta.idVenta, fecha, venta.vendedor ? venta.vendedor.nombre : '-', cliente, cantidadArticulos, formatoGs(venta.total)]
             .forEach((valor) => {
                 const td = document.createElement('td');
                 td.textContent = valor;

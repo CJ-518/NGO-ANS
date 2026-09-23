@@ -15,7 +15,7 @@
     <main>
         <div style="display: flex; justify-content: space-between; align-items: center;">
             <h1>Portal de Ventas</h1>
-            <a href="index.html" style="text-decoration: none; color: #1a365d; font-weight: bold;">&larr; Volver al Panel</a>
+            <a id="link-volver-panel" href="index.html" style="text-decoration: none; color: #1a365d; font-weight: bold;">&larr; Volver al Panel</a>
         </div>
 
         <!-- Alta de artículo (solo lo ve el ADMINISTRADOR) -->
@@ -47,6 +47,34 @@
             <div style="margin-top: 15px; text-align: right;">
                 <button type="submit" form="articulo-form" class="btn-primary">Agregar al catálogo</button>
             </div>
+        </div>
+
+        <!-- Datos del cliente: lo completa quien vende, antes de confirmar la venta -->
+        <div id="seccion-cliente" class="card form-section">
+            <h2>Datos del cliente</h2>
+            <p style="color: #4a5568; margin-top: 0;">
+                Completá estos datos para asociar la venta a un cliente. Si vendés a consumidor final,
+                dejá los cuatro campos vacíos.
+            </p>
+            <div class="form-grid">
+                <div>
+                    <label for="cli-documento">Documento</label>
+                    <input type="text" id="cli-documento" maxlength="20" inputmode="numeric" autocomplete="off">
+                </div>
+                <div>
+                    <label for="cli-nombre">Nombre y apellido</label>
+                    <input type="text" id="cli-nombre" maxlength="100" autocomplete="off">
+                </div>
+                <div>
+                    <label for="cli-telefono">Teléfono</label>
+                    <input type="text" id="cli-telefono" maxlength="20" autocomplete="off">
+                </div>
+                <div>
+                    <label for="cli-correo">Correo electrónico (opcional)</label>
+                    <input type="email" id="cli-correo" maxlength="100" autocomplete="off">
+                </div>
+            </div>
+            <div id="cliente-mensaje" style="display: none; margin-top: 15px; padding: 10px 12px; border-radius: 4px;"></div>
         </div>
 
         <h2>Catálogo / Stock disponible</h2>
@@ -96,6 +124,7 @@
                     <th>N°</th>
                     <th>Fecha</th>
                     <th>Vendedor</th>
+                    <th>Cliente</th>
                     <th>Artículos</th>
                     <th>Total</th>
                 </tr>

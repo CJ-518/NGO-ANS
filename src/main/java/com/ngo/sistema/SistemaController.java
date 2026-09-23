@@ -37,13 +37,14 @@ public class SistemaController {
         );
     }
 
-    @PreAuthorize("hasAnyRole('ADMINISTRADOR', 'FUNCIONARIO')")
+    // El VENDEDOR también registra clientes: los carga desde el Portal de Ventas.
+    @PreAuthorize("hasAnyRole('ADMINISTRADOR', 'ATENCION', 'VENDEDOR')")
     @PostMapping("/clientes")
     public Cliente crearCliente(@RequestBody Cliente cliente) {
         return clienteRepo.save(cliente);
     }
 
-    @PreAuthorize("hasAnyRole('ADMINISTRADOR', 'FUNCIONARIO')")
+    @PreAuthorize("hasAnyRole('ADMINISTRADOR', 'ATENCION')")
     @PostMapping("/productos")
     public Producto crearProducto(@RequestBody Producto producto) {
         return productoRepo.save(producto);
@@ -62,7 +63,7 @@ public class SistemaController {
     }
 
     // TECNICO no puede registrar solicitudes nuevas.
-    @PreAuthorize("hasAnyRole('ADMINISTRADOR', 'FUNCIONARIO')")
+    @PreAuthorize("hasAnyRole('ADMINISTRADOR', 'ATENCION')")
     @PostMapping("/solicitudes")
     public Solicitud crearSolicitud(@RequestBody Solicitud solicitud) {
         if (solicitud.getGarantia() == null
@@ -104,7 +105,7 @@ public class SistemaController {
     }
 
     // TECNICO no puede cambiar el estado de una solicitud.
-    @PreAuthorize("hasAnyRole('ADMINISTRADOR', 'FUNCIONARIO')")
+    @PreAuthorize("hasAnyRole('ADMINISTRADOR', 'ATENCION')")
     @PutMapping("/solicitudes/{id}/estado")
     public Solicitud actualizarEstado(@PathVariable Long id, @RequestBody Map<String, String> payload) {
         Solicitud solicitud = solicitudRepo.findById(id).orElse(null);
