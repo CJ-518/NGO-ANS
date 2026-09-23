@@ -27,10 +27,13 @@
                     sus datos y aparecen abajo los productos que ya le vendimos.
                 </p>
                 <div class="form-grid">
-                    <div>
+                    <div class="autocomplete-wrapper">
                         <label>Documento</label>
-                        <input type="text" id="documento" list="lista-documento" autocomplete="off" required pattern="^[0-9]+$">
-                        <datalist id="lista-documento"></datalist>
+                        <input type="text" id="documento" autocomplete="off" required pattern="^[0-9]+$">
+                        <!-- Lista de sugerencias propia (reemplaza al datalist nativo): se arma y filtra
+                             en nueva-solicitud.js a medida que se escribe, mostrando el número de
+                             documento (lo que se completa) y el nombre del cliente al lado. -->
+                        <div id="sugerencias-documento" class="autocomplete-lista" style="display: none;"></div>
                     </div>
                     <div>
                         <label>Nombre y apellido</label>

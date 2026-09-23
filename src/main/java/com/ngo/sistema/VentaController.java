@@ -9,6 +9,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -40,6 +41,9 @@ public class VentaController {
 
     @Autowired
     private ClienteRepository clienteRepo;
+
+    @Autowired
+    private ProductoRepository productoRepo;
 
     // ---------- Catálogo / stock ----------
 
@@ -150,7 +154,41 @@ public class VentaController {
         venta.setDetalles(detalles);
         venta = ventaRepo.save(venta);
 
+        // Se registra cada unidad vendida como un Producto (equipo con N° de serie),
+        // para que aparezca en "Nueva solicitud" y pueda tener seguimiento de garantía.
+        // Solo tiene sentido si la venta tiene un cliente (un producto siempre necesita dueño).
+        if (venta.getCliente() != null) {
+            registrarProductosDeLaVenta(venta, detalles);
+        }
+
         return ResponseEntity.status(HttpStatus.CREATED).body(venta);
+    }
+
+    // Genera un Producto por cada unidad vendida, con un N° de serie propio (no es el de
+    // fábrica: el catálogo de artículos no lo captura). El formato VTA-{idVenta}-{idArticulo}-{n}
+    // garantiza que sea único y permite rastrear de qué venta salió cada equipo.
+    private void registrarProductosDeLaVenta(Venta venta, List<DetalleVenta> detalles) {
+        for (DetalleVenta detalle : detalles) {
+            Articulo articulo = detalle.getArticulo();
+            String tipoProducto = articulo.getNombre();
+            String marca = tieneTexto(articulo.getCategoria()) ? articulo.getCategoria() : tipoProducto;
+            String modelo = tieneTexto(articulo.getDescripcion()) ? articulo.getDescripcion() : tipoProducto;
+
+            for (int unidad = 1; unidad <= detalle.getCantidad(); unidad++) {
+                Producto producto = new Producto();
+                producto.setTipoProducto(tipoProducto);
+                producto.setMarca(marca);
+                producto.setModelo(modelo);
+                producto.setNroSerie("VTA-" + venta.getIdVenta() + "-" + articulo.getIdArticulo() + "-" + unidad);
+                producto.setCliente(venta.getCliente());
+                producto.setFechaVenta(LocalDate.now());
+                productoRepo.save(producto);
+            }
+        }
+    }
+
+    private static boolean tieneTexto(String texto) {
+        return texto != null && !texto.isBlank();
     }
 
     private static ResponseEntity<Map<String, String>> error(HttpStatus estado, String mensaje) {

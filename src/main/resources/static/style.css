@@ -62,6 +62,47 @@ input[type="text"], input[type="email"], input[type="password"], textarea {
     border-radius: 4px;
     box-sizing: border-box;
 }
+.autocomplete-wrapper {
+    position: relative;
+}
+.autocomplete-lista {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    z-index: 20;
+    margin-top: 2px;
+    max-height: 220px;
+    overflow-y: auto;
+    background-color: white;
+    border: 1px solid #cbd5e0;
+    border-radius: 4px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.12);
+}
+.autocomplete-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 10px;
+    padding: 8px 12px;
+    cursor: pointer;
+}
+.autocomplete-item:hover,
+.autocomplete-item.activo {
+    background-color: #ebf8ff;
+}
+.autocomplete-doc {
+    font-weight: bold;
+    color: #1a365d;
+    white-space: nowrap;
+}
+.autocomplete-nombre {
+    color: #718096;
+    font-size: 13px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
 .btn-primary {
     background-color: #2b6cb0;
     color: white;

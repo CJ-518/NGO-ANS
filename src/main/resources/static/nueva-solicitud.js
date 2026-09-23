@@ -7,6 +7,7 @@ let productoSeleccionado = null; // Producto que coincide exactamente con los cu
 let clientes = [];               // Todos los clientes registrados (para sugerir documentos)
 let clienteEncontrado = null;    // Cliente existente que coincide con el documento escrito (o null si es nuevo)
 let productosCliente = [];       // Productos que ya le vendimos a ese cliente
+let indiceActivoDocumento = -1;  // Opción resaltada con el teclado en la lista de sugerencias de documento
 
 const normalizar = (texto) => (texto || '').trim().toLowerCase();
 const valorDe = (campo) => normalizar(document.getElementById(campo).value);
@@ -31,7 +32,6 @@ const valorDe = (campo) => normalizar(document.getElementById(campo).value);
         console.error('Error cargando los clientes:', error);
         clientes = [];
     }
-    actualizarSugerenciasDocumento();
 
     CAMPOS.forEach(campo => {
         const input = document.getElementById(campo);
@@ -47,28 +47,110 @@ const valorDe = (campo) => normalizar(document.getElementById(campo).value);
     });
 
     const inputDocumento = document.getElementById('documento');
+    const listaDocumento = document.getElementById('sugerencias-documento');
 
-    // Al elegir una sugerencia de la lista se busca enseguida, sin esperar a salir del campo
-    inputDocumento.addEventListener('input', (e) => {
-        if (!e.inputType || e.inputType === 'insertReplacementText') buscarCliente();
+    // Se filtran y muestran las sugerencias en cada tecleo, no solo al hacer click en el campo
+    inputDocumento.addEventListener('input', () => {
+        mostrarSugerenciasDocumento(inputDocumento.value);
+    });
+
+    // Navegación de la lista con el teclado (flechas, Enter para elegir, Escape para cerrar)
+    inputDocumento.addEventListener('keydown', (e) => {
+        const items = [...listaDocumento.children];
+        if (items.length === 0) return;
+
+        if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            indiceActivoDocumento = (indiceActivoDocumento + 1) % items.length;
+            resaltarSugerenciaActiva(items);
+        } else if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            indiceActivoDocumento = (indiceActivoDocumento - 1 + items.length) % items.length;
+            resaltarSugerenciaActiva(items);
+        } else if (e.key === 'Enter' && indiceActivoDocumento >= 0) {
+            e.preventDefault();
+            items[indiceActivoDocumento].dispatchEvent(new Event('mousedown'));
+        } else if (e.key === 'Escape') {
+            ocultarSugerenciasDocumento();
+        }
     });
 
     // Al terminar de escribir el documento (Enter, Tab o click fuera), se busca el cliente
     inputDocumento.addEventListener('change', buscarCliente);
 
+    // Un click fuera del campo o de la lista la cierra
+    document.addEventListener('click', (e) => {
+        if (e.target !== inputDocumento) ocultarSugerenciasDocumento();
+    });
+
     actualizarSugerencias();
 })();
 
-// Sugerencias de documentos ya registrados (el navegador filtra solo, a medida que se escribe).
-// El texto que se ve junto al valor es el nombre del cliente, para reconocerlo más fácil.
-function actualizarSugerenciasDocumento() {
-    const opciones = clientes.map(c => {
-        const opcion = document.createElement('option');
-        opcion.value = c.documento;
-        opcion.textContent = c.nombre;
-        return opcion;
+// ---------- Sugerencias de documento (lista propia, no datalist nativo) ----------
+//
+// Se arma en el momento a partir de "clientes", buscando coincidencias tanto en el
+// número de documento como en el nombre. Se ve el documento en primer plano (es lo
+// que se completa en el campo) y el nombre al lado, para reconocer al cliente.
+function mostrarSugerenciasDocumento(texto) {
+    const contenedor = document.getElementById('sugerencias-documento');
+    const escrito = normalizar(texto);
+    indiceActivoDocumento = -1;
+
+    if (!escrito) {
+        ocultarSugerenciasDocumento();
+        return;
+    }
+
+    const coincidencias = clientes
+        .filter(c => normalizar(c.documento).includes(escrito) || normalizar(c.nombre).includes(escrito))
+        .slice(0, 8);
+
+    if (coincidencias.length === 0) {
+        ocultarSugerenciasDocumento();
+        return;
+    }
+
+    const items = coincidencias.map((c) => {
+        const item = document.createElement('div');
+        item.className = 'autocomplete-item';
+
+        const doc = document.createElement('span');
+        doc.className = 'autocomplete-doc';
+        doc.textContent = c.documento;
+
+        const nombre = document.createElement('span');
+        nombre.className = 'autocomplete-nombre';
+        nombre.textContent = c.nombre;
+
+        item.append(doc, nombre);
+
+        // mousedown (no click) para que se ejecute antes de que el input pierda el foco
+        item.addEventListener('mousedown', (e) => {
+            e.preventDefault();
+            elegirSugerenciaDocumento(c);
+        });
+        return item;
     });
-    document.getElementById('lista-documento').replaceChildren(...opciones);
+
+    contenedor.replaceChildren(...items);
+    contenedor.style.display = 'block';
+}
+
+function elegirSugerenciaDocumento(cliente) {
+    document.getElementById('documento').value = cliente.documento;
+    ocultarSugerenciasDocumento();
+    buscarCliente();
+}
+
+function ocultarSugerenciasDocumento() {
+    const contenedor = document.getElementById('sugerencias-documento');
+    contenedor.replaceChildren();
+    contenedor.style.display = 'none';
+    indiceActivoDocumento = -1;
+}
+
+function resaltarSugerenciaActiva(items) {
+    items.forEach((item, i) => item.classList.toggle('activo', i === indiceActivoDocumento));
 }
 
 // ---------- Cliente: autocompletar datos y productos que ya compró ----------
@@ -356,7 +438,6 @@ document.getElementById('solicitud-form').addEventListener('submit', async funct
             if (!clienteRes.ok) throw new Error('No se pudo guardar el cliente (HTTP ' + clienteRes.status + ')');
             clienteSalvado = await clienteRes.json();
             clientes.push(clienteSalvado); // queda disponible como sugerencia sin recargar la página
-            actualizarSugerenciasDocumento();
         }
 
         // Paso B: guardar la solicitud enlazada al cliente y al producto existente.

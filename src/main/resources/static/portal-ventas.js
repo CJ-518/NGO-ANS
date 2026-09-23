@@ -217,17 +217,38 @@ function validarDatosCliente(datos) {
     return { valido: true, esConsumidorFinal: false, datos };
 }
 
-// Guarda el cliente en el sistema (POST /api/clientes) y devuelve el cliente creado.
+// Guarda el cliente en el sistema: busca primero por documento (igual que en "Nueva
+// solicitud") y actualiza si ya existe, o lo crea si es nuevo. Evita el error de
+// documento duplicado al vender de nuevo a un cliente ya registrado.
 async function guardarCliente(datosCliente) {
-    const res = await fetch('/api/clientes', {
+    const resBusqueda = await fetch(`/api/clientes/buscar?documento=${encodeURIComponent(datosCliente.documento)}`);
+
+    if (resBusqueda.ok) {
+        const clienteExistente = await resBusqueda.json();
+        const resActualizar = await fetch(`/api/clientes/${clienteExistente.idCliente}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(datosCliente)
+        });
+        if (!resActualizar.ok) {
+            throw new Error('No se pudo actualizar el cliente (HTTP ' + resActualizar.status + ')');
+        }
+        return resActualizar.json();
+    }
+
+    if (resBusqueda.status !== 404) {
+        throw new Error('No se pudo buscar el cliente (HTTP ' + resBusqueda.status + ')');
+    }
+
+    const resCrear = await fetch('/api/clientes', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(datosCliente)
     });
-    if (!res.ok) {
-        throw new Error('No se pudo guardar el cliente (HTTP ' + res.status + ')');
+    if (!resCrear.ok) {
+        throw new Error('No se pudo guardar el cliente (HTTP ' + resCrear.status + ')');
     }
-    return res.json();
+    return resCrear.json();
 }
 
 // ---------- Venta ----------

@@ -65,11 +65,12 @@ public class SistemaController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
-    // Listado completo de clientes, para las sugerencias de documento en "Nueva solicitud"
-    // (el navegador filtra solo, a medida que se escribe, con un <datalist>).
+    // Listado de clientes con al menos un producto registrado, para las sugerencias de
+    // documento en "Nueva solicitud" (se filtra en el momento en que se escribe).
+    // Un cliente sin productos no sirve acá: no hay nada que atender en una solicitud.
     @GetMapping("/clientes")
     public List<Cliente> listarClientes() {
-        return clienteRepo.findAll();
+        return clienteRepo.findClientesConProductos();
     }
 
     // Productos que este cliente ya tiene registrados (ya no se busca a través de garantías
