@@ -1,8 +1,12 @@
 // Campos del producto: coinciden con los nombres del JSON y con los id del formulario
 const CAMPOS = ['tipoProducto', 'marca', 'modelo', 'nroSerie'];
 
-let productos = [];              // Productos registrados en la base de datos
+let productos = [];              // Catálogo completo de productos registrados
 let productoSeleccionado = null; // Producto que coincide exactamente con los cuatro campos
+
+let clientes = [];               // Todos los clientes registrados (para sugerir documentos)
+let clienteEncontrado = null;    // Cliente existente que coincide con el documento escrito (o null si es nuevo)
+let productosCliente = [];       // Productos que ya le vendimos a ese cliente
 
 const normalizar = (texto) => (texto || '').trim().toLowerCase();
 const valorDe = (campo) => normalizar(document.getElementById(campo).value);
@@ -19,6 +23,16 @@ const valorDe = (campo) => normalizar(document.getElementById(campo).value);
         alert('No se pudo cargar la lista de productos registrados.');
     }
 
+    try {
+        const res = await fetch('/api/clientes');
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        clientes = await res.json();
+    } catch (error) {
+        console.error('Error cargando los clientes:', error);
+        clientes = [];
+    }
+    actualizarSugerenciasDocumento();
+
     CAMPOS.forEach(campo => {
         const input = document.getElementById(campo);
 
@@ -32,10 +46,155 @@ const valorDe = (campo) => normalizar(document.getElementById(campo).value);
         input.addEventListener('change', alConfirmar);
     });
 
+    const inputDocumento = document.getElementById('documento');
+
+    // Al elegir una sugerencia de la lista se busca enseguida, sin esperar a salir del campo
+    inputDocumento.addEventListener('input', (e) => {
+        if (!e.inputType || e.inputType === 'insertReplacementText') buscarCliente();
+    });
+
+    // Al terminar de escribir el documento (Enter, Tab o click fuera), se busca el cliente
+    inputDocumento.addEventListener('change', buscarCliente);
+
     actualizarSugerencias();
 })();
 
-// ---------- Sugerencias ----------
+// Sugerencias de documentos ya registrados (el navegador filtra solo, a medida que se escribe).
+// El texto que se ve junto al valor es el nombre del cliente, para reconocerlo más fácil.
+function actualizarSugerenciasDocumento() {
+    const opciones = clientes.map(c => {
+        const opcion = document.createElement('option');
+        opcion.value = c.documento;
+        opcion.textContent = c.nombre;
+        return opcion;
+    });
+    document.getElementById('lista-documento').replaceChildren(...opciones);
+}
+
+// ---------- Cliente: autocompletar datos y productos que ya compró ----------
+
+async function buscarCliente() {
+    const documento = document.getElementById('documento').value.trim();
+
+    clienteEncontrado = null;
+    productosCliente = [];
+    limpiarProducto(); // se limpia lo elegido para el cliente/documento anterior
+    pintarProductosCliente();
+    mostrarEstadoCliente(null);
+
+    if (!documento) return;
+
+    try {
+        const res = await fetch(`/api/clientes/buscar?documento=${encodeURIComponent(documento)}`);
+
+        if (res.status === 404) {
+            mostrarEstadoCliente(false); // documento no registrado: es un cliente nuevo
+            return;
+        }
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+
+        clienteEncontrado = await res.json();
+
+        // Se completan los demás datos; el usuario igual puede corregirlos antes de registrar la solicitud.
+        document.getElementById('nombre').value = clienteEncontrado.nombre || '';
+        document.getElementById('telefono').value = clienteEncontrado.telefono || '';
+        document.getElementById('correo').value = clienteEncontrado.correo || '';
+        mostrarEstadoCliente(true);
+
+        await cargarProductosDelCliente(clienteEncontrado.idCliente);
+    } catch (error) {
+        console.error('Error buscando el cliente:', error);
+    }
+}
+
+function mostrarEstadoCliente(encontrado) {
+    const caja = document.getElementById('cliente-estado');
+
+    if (encontrado === null) {
+        caja.style.display = 'none';
+        return;
+    }
+
+    caja.style.display = 'block';
+    if (encontrado) {
+        caja.textContent = 'Cliente encontrado: se completaron sus datos.';
+        caja.style.backgroundColor = '#c6f6d5';
+        caja.style.color = '#22543d';
+    } else {
+        caja.textContent = 'Cliente nuevo: completá sus datos.';
+        caja.style.backgroundColor = '#ebf8ff';
+        caja.style.color = '#2c5282';
+    }
+}
+
+async function cargarProductosDelCliente(idCliente) {
+    try {
+        const res = await fetch(`/api/clientes/${idCliente}/productos`);
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        productosCliente = await res.json();
+    } catch (error) {
+        console.error('Error cargando los productos del cliente:', error);
+        productosCliente = [];
+    }
+    pintarProductosCliente();
+
+    // Un solo producto: se autocompleta directo. Varios: se muestran para elegir cuál (pintarProductosCliente).
+    if (productosCliente.length === 1) {
+        elegirProductoDeCliente(productosCliente[0]);
+    }
+}
+
+// Dibuja los botones con los productos de este cliente. Se oculta todo si no hay ninguno.
+// El producto ya elegido (productoSeleccionado) queda resaltado.
+function pintarProductosCliente() {
+    const contenedor = document.getElementById('productos-cliente');
+    const lista = document.getElementById('productos-cliente-lista');
+    lista.replaceChildren();
+
+    if (productosCliente.length === 0) {
+        contenedor.style.display = 'none';
+        return;
+    }
+
+    document.getElementById('productos-cliente-titulo').textContent =
+        productosCliente.length === 1
+            ? 'Producto de este cliente (completado automáticamente)'
+            : `Este cliente tiene ${productosCliente.length} productos: elegí cuál corresponde`;
+
+    productosCliente.forEach((p) => {
+        const elegido = productoSeleccionado && productoSeleccionado.idProducto === p.idProducto;
+
+        const boton = document.createElement('button');
+        boton.type = 'button';
+        boton.textContent = `${p.tipoProducto} · ${p.marca} ${p.modelo} (N/S ${p.nroSerie})`;
+        boton.style.cssText = 'padding: 6px 12px; border-radius: 20px; cursor: pointer; font-size: 13px; ' +
+            (elegido
+                ? 'border: 1px solid #1a365d; background-color: #1a365d; color: #fff;'
+                : 'border: 1px solid #1a365d; background-color: #fff; color: #1a365d;');
+        boton.addEventListener('click', () => elegirProductoDeCliente(p));
+        lista.appendChild(boton);
+    });
+
+    contenedor.style.display = 'block';
+}
+
+// Un clic en un producto del cliente completa los cuatro campos, igual que si se hubiera
+// escrito y encontrado una única coincidencia en la búsqueda manual.
+function elegirProductoDeCliente(producto) {
+    CAMPOS.forEach(c => { document.getElementById(c).value = producto[c]; });
+    actualizarSugerencias();
+    mostrarProducto(producto);
+    pintarProductosCliente(); // refresca cuál queda resaltado como elegido
+}
+
+// Limpia los cuatro campos del producto y lo deselecciona (se usa al cambiar de cliente).
+function limpiarProducto() {
+    CAMPOS.forEach(c => { document.getElementById(c).value = ''; });
+    actualizarSugerencias();
+    mostrarProducto(null);
+}
+
+// ---------- Sugerencias (búsqueda manual por tipo / marca / modelo / N° de serie) ----------
 
 // Productos que coinciden con lo escrito en los campos (ignorando el campo "excluir")
 function coincidencias(excluir) {
@@ -176,14 +335,29 @@ document.getElementById('solicitud-form').addEventListener('submit', async funct
     };
 
     try {
-        // Paso A: guardar el cliente
-        const clienteRes = await fetch('/api/clientes', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(clienteData)
-        });
-        if (!clienteRes.ok) throw new Error('No se pudo guardar el cliente (HTTP ' + clienteRes.status + ')');
-        const clienteSalvado = await clienteRes.json();
+        // Paso A: guardar el cliente.
+        // Si ya lo habíamos encontrado por documento, se actualiza (evita duplicarlo);
+        // si es un cliente nuevo, se crea.
+        let clienteSalvado;
+        if (clienteEncontrado && clienteEncontrado.idCliente) {
+            const clienteRes = await fetch(`/api/clientes/${clienteEncontrado.idCliente}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(clienteData)
+            });
+            if (!clienteRes.ok) throw new Error('No se pudo actualizar el cliente (HTTP ' + clienteRes.status + ')');
+            clienteSalvado = await clienteRes.json();
+        } else {
+            const clienteRes = await fetch('/api/clientes', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(clienteData)
+            });
+            if (!clienteRes.ok) throw new Error('No se pudo guardar el cliente (HTTP ' + clienteRes.status + ')');
+            clienteSalvado = await clienteRes.json();
+            clientes.push(clienteSalvado); // queda disponible como sugerencia sin recargar la página
+            actualizarSugerenciasDocumento();
+        }
 
         // Paso B: guardar la solicitud enlazada al cliente y al producto existente.
         // La garantía del producto la enlaza el servidor automáticamente.

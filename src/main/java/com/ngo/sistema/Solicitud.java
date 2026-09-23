@@ -25,10 +25,6 @@ public class Solicitud {
     @JoinColumn(name = "id_producto", nullable = false)
     private Producto producto;
 
-    @ManyToOne
-    @JoinColumn(name = "id_garantia")
-    private Garantia garantia;
-
     @Column(insertable = false, updatable = false)
     private LocalDateTime fecha;
 
@@ -58,9 +54,6 @@ public class Solicitud {
     public Producto getProducto() { return producto; }
     public void setProducto(Producto producto) { this.producto = producto; }
 
-    public Garantia getGarantia() { return garantia; }
-    public void setGarantia(Garantia garantia) { this.garantia = garantia; }
-    
     public LocalDateTime getFecha() { return fecha; }
     public void setFecha(LocalDateTime fecha) { this.fecha = fecha; }
     
