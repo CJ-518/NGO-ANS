@@ -216,3 +216,25 @@ input[type="text"], input[type="email"], input[type="password"], textarea {
 .modal-cerrar:hover {
     color: #1a365d;
 }
+
+/* Menú desplegable de productos (Nueva solicitud) */
+.select-producto {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #cbd5e0;
+    border-radius: 4px;
+    box-sizing: border-box;
+    background-color: white;
+    font-size: 14px;
+}
+.select-producto:disabled {
+    background-color: #edf2f7;
+    color: #718096;
+    cursor: not-allowed;
+}
+.select-producto option.garantia-vigente {
+    color: #22543d;
+}
+.select-producto option.garantia-vencida {
+    color: #742a2a;
+}

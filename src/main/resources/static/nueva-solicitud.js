@@ -1,29 +1,18 @@
-// Campos del producto: coinciden con los nombres del JSON y con los id del formulario
-const CAMPOS = ['tipoProducto', 'marca', 'modelo', 'nroSerie'];
-
-let productos = [];              // Catálogo completo de productos registrados
-let productoSeleccionado = null; // Producto que coincide exactamente con los cuatro campos
-
 let clientes = [];               // Todos los clientes registrados (para sugerir documentos)
 let clienteEncontrado = null;    // Cliente existente que coincide con el documento escrito (o null si es nuevo)
 let productosCliente = [];       // Productos que ya le vendimos a ese cliente
+let garantias = new Map();       // idProducto -> garantía (respuesta de /api/productos/{id}/garantia)
+let productoSeleccionado = null; // Producto elegido en el menú desplegable
 let indiceActivoDocumento = -1;  // Opción resaltada con el teclado en la lista de sugerencias de documento
+let busquedaActual = 0;          // Identifica la búsqueda de cliente vigente, para descartar respuestas viejas
+let documentoBuscado = null;     // Último documento ya buscado: evita repetir la búsqueda (y rearmar el menú) si no cambió
 
 const normalizar = (texto) => (texto || '').trim().toLowerCase();
-const valorDe = (campo) => normalizar(document.getElementById(campo).value);
+const selectProducto = document.getElementById('producto');
 
 // ---------- Carga inicial y eventos ----------
 
 (async function iniciar() {
-    try {
-        const res = await fetch('/api/productos');
-        if (!res.ok) throw new Error('HTTP ' + res.status);
-        productos = await res.json();
-    } catch (error) {
-        console.error('Error cargando los productos:', error);
-        alert('No se pudo cargar la lista de productos registrados.');
-    }
-
     try {
         const res = await fetch('/api/clientes');
         if (!res.ok) throw new Error('HTTP ' + res.status);
@@ -33,17 +22,9 @@ const valorDe = (campo) => normalizar(document.getElementById(campo).value);
         clientes = [];
     }
 
-    CAMPOS.forEach(campo => {
-        const input = document.getElementById(campo);
-
-        input.addEventListener('input', (e) => {
-            alEscribir();
-            // Elegir una opción de la lista dispara 'input' sin haber tipeado nada
-            if (!e.inputType || e.inputType === 'insertReplacementText') alConfirmar();
-        });
-
-        // Al terminar de editar un campo (Enter, Tab o click fuera)
-        input.addEventListener('change', alConfirmar);
+    selectProducto.addEventListener('change', () => {
+        const id = Number(selectProducto.value);
+        mostrarProducto(productosCliente.find(p => p.idProducto === id) || null);
     });
 
     const inputDocumento = document.getElementById('documento');
@@ -82,14 +63,12 @@ const valorDe = (campo) => normalizar(document.getElementById(campo).value);
     document.addEventListener('click', (e) => {
         if (e.target !== inputDocumento) ocultarSugerenciasDocumento();
     });
-
-    actualizarSugerencias();
 })();
 
 // ---------- Sugerencias de documento (lista propia, no datalist nativo) ----------
 //
 // Se arma en el momento a partir de "clientes", buscando coincidencias tanto en el
-// número de documento como en el nombre. Se ve el documento en primer plano (es lo
+// número de documento (solo si empieza con lo escrito) como en el nombre. Se ve el documento en primer plano (es lo
 // que se completa en el campo) y el nombre al lado, para reconocer al cliente.
 function mostrarSugerenciasDocumento(texto) {
     const contenedor = document.getElementById('sugerencias-documento');
@@ -102,7 +81,7 @@ function mostrarSugerenciasDocumento(texto) {
     }
 
     const coincidencias = clientes
-        .filter(c => normalizar(c.documento).includes(escrito) || normalizar(c.nombre).includes(escrito))
+        .filter(c => normalizar(c.documento).startsWith(escrito) || normalizar(c.nombre).includes(escrito))
         .slice(0, 8);
 
     if (coincidencias.length === 0) {
@@ -158,34 +137,47 @@ function resaltarSugerenciaActiva(items) {
 async function buscarCliente() {
     const documento = document.getElementById('documento').value.trim();
 
+    // Al hacer click en el menú de productos, el campo Documento pierde el foco y dispara 'change'.
+    // Si el documento es el mismo que ya se buscó, no se rehace todo: rearmar el menú justo cuando
+    // se está abriendo hace que se vea mal en el primer click.
+    if (documento === documentoBuscado) return;
+    documentoBuscado = documento;
+
+    const busqueda = ++busquedaActual; // si llega otra búsqueda mientras esta espera, esta se descarta
+
     clienteEncontrado = null;
     productosCliente = [];
-    limpiarProducto(); // se limpia lo elegido para el cliente/documento anterior
-    pintarProductosCliente();
+    garantias = new Map();
+    pintarProductos('Primero ingresá el documento del cliente');
     mostrarEstadoCliente(null);
 
     if (!documento) return;
 
     try {
         const res = await fetch(`/api/clientes/buscar?documento=${encodeURIComponent(documento)}`);
+        if (busqueda !== busquedaActual) return;
 
         if (res.status === 404) {
             mostrarEstadoCliente(false); // documento no registrado: es un cliente nuevo
+            pintarProductos('Cliente nuevo: todavía no tiene productos registrados');
             return;
         }
         if (!res.ok) throw new Error('HTTP ' + res.status);
 
-        clienteEncontrado = await res.json();
+        const cliente = await res.json();
+        if (busqueda !== busquedaActual) return;
+        clienteEncontrado = cliente;
 
         // Se completan los demás datos; el usuario igual puede corregirlos antes de registrar la solicitud.
-        document.getElementById('nombre').value = clienteEncontrado.nombre || '';
-        document.getElementById('telefono').value = clienteEncontrado.telefono || '';
-        document.getElementById('correo').value = clienteEncontrado.correo || '';
+        document.getElementById('nombre').value = cliente.nombre || '';
+        document.getElementById('telefono').value = cliente.telefono || '';
+        document.getElementById('correo').value = cliente.correo || '';
         mostrarEstadoCliente(true);
 
-        await cargarProductosDelCliente(clienteEncontrado.idCliente);
+        await cargarProductosDelCliente(cliente.idCliente, busqueda);
     } catch (error) {
         console.error('Error buscando el cliente:', error);
+        documentoBuscado = null; // permite reintentar
     }
 }
 
@@ -209,123 +201,90 @@ function mostrarEstadoCliente(encontrado) {
     }
 }
 
-async function cargarProductosDelCliente(idCliente) {
+async function cargarProductosDelCliente(idCliente, busqueda) {
+    let lista = [];
     try {
         const res = await fetch(`/api/clientes/${idCliente}/productos`);
         if (!res.ok) throw new Error('HTTP ' + res.status);
-        productosCliente = await res.json();
+        lista = await res.json();
     } catch (error) {
         console.error('Error cargando los productos del cliente:', error);
-        productosCliente = [];
-    }
-    pintarProductosCliente();
-
-    // Un solo producto: se autocompleta directo. Varios: se muestran para elegir cuál (pintarProductosCliente).
-    if (productosCliente.length === 1) {
-        elegirProductoDeCliente(productosCliente[0]);
-    }
-}
-
-// Dibuja los botones con los productos de este cliente. Se oculta todo si no hay ninguno.
-// El producto ya elegido (productoSeleccionado) queda resaltado.
-function pintarProductosCliente() {
-    const contenedor = document.getElementById('productos-cliente');
-    const lista = document.getElementById('productos-cliente-lista');
-    lista.replaceChildren();
-
-    if (productosCliente.length === 0) {
-        contenedor.style.display = 'none';
+        pintarProductos('No se pudieron cargar los productos del cliente');
         return;
     }
 
-    document.getElementById('productos-cliente-titulo').textContent =
-        productosCliente.length === 1
-            ? 'Producto de este cliente (completado automáticamente)'
-            : `Este cliente tiene ${productosCliente.length} productos: elegí cuál corresponde`;
+    // La garantía de cada producto se pide al servidor (fuente única del cálculo), en paralelo
+    const pares = await Promise.all(lista.map(async (p) => {
+        try {
+            const res = await fetch(`/api/productos/${p.idProducto}/garantia`);
+            return [p.idProducto, res.ok ? await res.json() : null];
+        } catch (error) {
+            console.error('Error consultando la garantía:', error);
+            return [p.idProducto, null];
+        }
+    }));
 
-    productosCliente.forEach((p) => {
-        const elegido = productoSeleccionado && productoSeleccionado.idProducto === p.idProducto;
+    if (busqueda !== busquedaActual) return; // el usuario ya cambió de cliente
 
-        const boton = document.createElement('button');
-        boton.type = 'button';
-        boton.textContent = `${p.tipoProducto} · ${p.marca} ${p.modelo} (N/S ${p.nroSerie})`;
-        boton.style.cssText = 'padding: 6px 12px; border-radius: 20px; cursor: pointer; font-size: 13px; ' +
-            (elegido
-                ? 'border: 1px solid #1a365d; background-color: #1a365d; color: #fff;'
-                : 'border: 1px solid #1a365d; background-color: #fff; color: #1a365d;');
-        boton.addEventListener('click', () => elegirProductoDeCliente(p));
-        lista.appendChild(boton);
-    });
+    productosCliente = lista;
+    garantias = new Map(pares);
+    pintarProductos();
 
-    contenedor.style.display = 'block';
-}
-
-// Un clic en un producto del cliente completa los cuatro campos, igual que si se hubiera
-// escrito y encontrado una única coincidencia en la búsqueda manual.
-function elegirProductoDeCliente(producto) {
-    CAMPOS.forEach(c => { document.getElementById(c).value = producto[c]; });
-    actualizarSugerencias();
-    mostrarProducto(producto);
-    pintarProductosCliente(); // refresca cuál queda resaltado como elegido
-}
-
-// Limpia los cuatro campos del producto y lo deselecciona (se usa al cambiar de cliente).
-function limpiarProducto() {
-    CAMPOS.forEach(c => { document.getElementById(c).value = ''; });
-    actualizarSugerencias();
-    mostrarProducto(null);
-}
-
-// ---------- Sugerencias (búsqueda manual por tipo / marca / modelo / N° de serie) ----------
-
-// Productos que coinciden con lo escrito en los campos (ignorando el campo "excluir")
-function coincidencias(excluir) {
-    return productos.filter(p =>
-        CAMPOS.every(campo => {
-            if (campo === excluir) return true;
-            const escrito = valorDe(campo);
-            return !escrito || normalizar(p[campo]).includes(escrito);
-        })
-    );
-}
-
-// Cada campo sugiere los valores que existen en los productos compatibles con los OTROS campos
-function actualizarSugerencias() {
-    CAMPOS.forEach(campo => {
-        const valores = [...new Set(coincidencias(campo).map(p => p[campo]))]
-            .sort((a, b) => a.localeCompare(b, 'es'));
-
-        const opciones = valores.map(valor => {
-            const opcion = document.createElement('option');
-            opcion.value = valor;
-            return opcion;
-        });
-        document.getElementById('lista-' + campo).replaceChildren(...opciones);
-    });
-}
-
-function alEscribir() {
-    actualizarSugerencias();
-    const exacto = productos.find(p => CAMPOS.every(c => normalizar(p[c]) === valorDe(c))) || null;
-    mostrarProducto(exacto);
-}
-
-// Si solo queda un producto posible, se completan todos los campos
-function alConfirmar() {
-    const hayFiltro = CAMPOS.some(c => valorDe(c));
-    const candidatos = coincidencias(null);
-    if (hayFiltro && candidatos.length === 1) {
-        const p = candidatos[0];
-        CAMPOS.forEach(c => { document.getElementById(c).value = p[c]; });
-        actualizarSugerencias();
-        mostrarProducto(p);
+    // Un solo producto: queda elegido directamente
+    if (productosCliente.length === 1) {
+        selectProducto.value = String(productosCliente[0].idProducto);
+        mostrarProducto(productosCliente[0]);
     }
+}
+
+// ---------- Menú desplegable de productos ----------
+
+const esVigente = (garantia) => garantia && garantia.estado === 'VIGENTE';
+
+function etiquetaGarantia(garantia) {
+    if (!garantia) return 'Garantía sin datos';
+    return esVigente(garantia) ? '✔ En garantía' : '✖ Garantía vencida';
+}
+
+// Arma las opciones del menú con los productos del cliente. Cada opción muestra si la garantía
+// está activa o no. Si no hay productos, deja el menú deshabilitado con el mensaje recibido.
+function pintarProductos(mensajeVacio) {
+    productoSeleccionado = null;
+    mostrarProducto(null);
+
+    const opciones = [];
+
+    if (productosCliente.length === 0) {
+        const vacia = document.createElement('option');
+        vacia.value = '';
+        vacia.textContent = mensajeVacio || 'Este cliente no tiene productos registrados';
+        opciones.push(vacia);
+    } else {
+        const placeholder = document.createElement('option');
+        placeholder.value = '';
+        placeholder.textContent = productosCliente.length === 1
+            ? 'Producto del cliente'
+            : `Elegí un producto (${productosCliente.length} disponibles)`;
+        opciones.push(placeholder);
+
+        productosCliente.forEach((p) => {
+            const garantia = garantias.get(p.idProducto);
+            const opcion = document.createElement('option');
+            opcion.value = p.idProducto;
+            opcion.textContent = `${p.tipoProducto} · ${p.marca} ${p.modelo} (N/S ${p.nroSerie}) — ${etiquetaGarantia(garantia)}`;
+            if (garantia) opcion.className = esVigente(garantia) ? 'garantia-vigente' : 'garantia-vencida';
+            opciones.push(opcion);
+        });
+    }
+
+    selectProducto.replaceChildren(...opciones);
+    selectProducto.value = '';
+    selectProducto.disabled = productosCliente.length === 0;
 }
 
 // ---------- Producto elegido y garantía ----------
 
-async function mostrarProducto(producto) {
-    if (producto === productoSeleccionado) return;
+function mostrarProducto(producto) {
     productoSeleccionado = producto;
 
     const caja = document.getElementById('info-producto');
@@ -336,39 +295,18 @@ async function mostrarProducto(producto) {
     }
 
     caja.style.display = 'block';
-    caja.replaceChildren(linea('Consultando garantía...'));
-
-    let garantia = null;
-    let error = false;
-    try {
-        const res = await fetch(`/api/productos/${producto.idProducto}/garantia`);
-        if (res.ok) garantia = await res.json();
-        else if (res.status !== 404) error = true; // 404 = el producto no tiene garantía
-    } catch (e) {
-        console.error('Error consultando la garantía:', e);
-        error = true;
-    }
-
-    // Si el usuario cambió de producto mientras se consultaba, se descarta este resultado
-    if (productoSeleccionado !== producto) return;
-    dibujarGarantia(caja, garantia, error);
+    dibujarGarantia(caja, garantias.get(producto.idProducto));
 }
 
-function dibujarGarantia(caja, garantia, error) {
-    if (error) {
-        caja.replaceChildren(linea('No se pudo consultar la garantía del producto.'));
-        return;
-    }
+function dibujarGarantia(caja, garantia) {
     if (!garantia) {
-        caja.replaceChildren(linea('Este producto no tiene garantía registrada.'));
+        caja.replaceChildren(linea('No se pudo consultar la garantía del producto.'));
         return;
     }
 
     const inicio = fechaLocal(garantia.fechaInicio);
     const fin = fechaLocal(garantia.fechaFin);
-    const hoy = new Date();
-    hoy.setHours(0, 0, 0, 0);
-    const vigente = fin >= hoy;
+    const vigente = esVigente(garantia);
 
     const insignia = document.createElement('span');
     insignia.textContent = vigente ? 'EN GARANTÍA' : 'GARANTÍA VENCIDA';
@@ -403,8 +341,8 @@ document.getElementById('solicitud-form').addEventListener('submit', async funct
     event.preventDefault(); // Evita el envío estándar del formulario
 
     if (!productoSeleccionado) {
-        alert('Elegí un producto registrado. Podés buscarlo por tipo, marca, modelo o número de serie.');
-        document.getElementById('nroSerie').focus();
+        alert('Elegí un producto del menú desplegable (primero ingresá el documento de un cliente registrado).');
+        selectProducto.focus();
         return;
     }
 

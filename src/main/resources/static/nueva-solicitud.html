@@ -17,14 +17,14 @@
             <h1>Nueva solicitud técnica</h1>
             <a href="index.html" style="text-decoration: none; color: #1a365d; font-weight: bold;">&larr; Volver al Panel</a>
         </div>
-        
+
         <form id="solicitud-form" class="form-container">
             <!-- Datos del Cliente -->
             <div class="card form-section">
                 <h2>Datos del cliente</h2>
                 <p style="color: #4a5568; margin-top: 0;">
                     Escribí el documento (o elegilo de las sugerencias): si el cliente ya está registrado, se completan
-                    sus datos y aparecen abajo los productos que ya le vendimos.
+                    sus datos y se habilita la lista de sus productos.
                 </p>
                 <div class="form-grid">
                     <div class="autocomplete-wrapper">
@@ -54,42 +54,17 @@
 
             <!-- Datos del Producto -->
             <div class="card form-section">
-                <h2>Datos del producto</h2>
-
-                <!-- Productos que ya le vendimos a este cliente: aparece solo si el cliente fue encontrado (lo completa nueva-solicitud.js) -->
-                <div id="productos-cliente" style="display: none; margin-bottom: 20px;">
-                    <label id="productos-cliente-titulo" style="display: block; margin-bottom: 8px;">Productos de este cliente</label>
-                    <div id="productos-cliente-lista" style="display: flex; flex-wrap: wrap; gap: 8px;"></div>
-                </div>
-
+                <h2>Producto</h2>
                 <p style="color: #4a5568; margin-top: 0;">
-                    También podés escribir en cualquier campo para ver sugerencias de todos los productos registrados.
-                    Al elegir uno, se completan los demás datos.
+                    Al ingresar el documento de un cliente registrado, acá aparecen sus productos con el estado de la garantía.
                 </p>
-                <div class="form-grid">
-                    <div>
-                        <label>Tipo de producto</label>
-                        <input type="text" id="tipoProducto" list="lista-tipoProducto" autocomplete="off" required>
-                        <datalist id="lista-tipoProducto"></datalist>
-                    </div>
-                    <div>
-                        <label>Marca</label>
-                        <input type="text" id="marca" list="lista-marca" autocomplete="off" required>
-                        <datalist id="lista-marca"></datalist>
-                    </div>
-                    <div>
-                        <label>Modelo</label>
-                        <input type="text" id="modelo" list="lista-modelo" autocomplete="off" required>
-                        <datalist id="lista-modelo"></datalist>
-                    </div>
-                    <div>
-                        <label>Número de serie</label>
-                        <input type="text" id="nroSerie" list="lista-nroSerie" autocomplete="off" required>
-                        <datalist id="lista-nroSerie"></datalist>
-                    </div>
-                </div>
+                <label for="producto">Producto del cliente</label>
+                <!-- Se llena desde nueva-solicitud.js con los productos del cliente y su garantía -->
+                <select id="producto" class="select-producto" required disabled>
+                    <option value="">Primero ingresá el documento del cliente</option>
+                </select>
 
-                <!-- Producto elegido y estado de su garantía (lo completa nueva-solicitud.js) -->
+                <!-- Detalle de la garantía del producto elegido (lo completa nueva-solicitud.js) -->
                 <div id="info-producto" style="display: none; margin-top: 20px; padding: 12px 15px; border: 1px solid #cbd5e0; border-radius: 4px; background-color: #f7fafc;"></div>
             </div>
 
@@ -97,7 +72,7 @@
             <div class="card form-section">
                 <h2>Descripción del problema</h2>
                 <textarea id="descripcion" rows="4" required style="width: 100%;"></textarea>
-                
+
                 <div style="margin-top: 20px; text-align: right;">
                     <button type="submit" class="btn-primary">Registrar Solicitud</button>
                 </div>
