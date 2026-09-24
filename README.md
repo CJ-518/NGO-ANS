@@ -196,6 +196,23 @@ psql -U postgres -d ngo_saeca -f db/ngo_ans.sql
 
 `db/ngo_ans.sql` es un volcado de `pg_dump` 18 con el esquema y los datos de ejemplo. Usá un cliente `psql` reciente: el archivo incluye los comandos `\restrict` / `\unrestrict` que agrega `pg_dump`.
 
+> ⚠️ Este respaldo todavía define `articulo.id_articulo` con un `DEFAULT nextval(...)`, previo a la migración a `GENERATED ALWAYS AS IDENTITY` descripta más abajo. Si restaurás el respaldo en una base nueva, volvé a aplicar esa migración para mantener la protección contra inserción manual del id.
+
+### Alta de artículos por SQL
+
+Además del formulario **Nuevo artículo** del Portal de Ventas (solo `ADMINISTRADOR`), se puede cargar stock nuevo directo por SQL, útil para altas masivas. No hay que incluir `id_articulo`: la columna lo genera sola.
+
+```sql
+INSERT INTO public.articulo (nombre, descripcion, categoria, precio, stock, estado)
+VALUES
+    ('Ventilador de pie', 'Motor de 3 velocidades', 'Ventilación', 450000, 20, 'ACTIVO'),
+    ('Cocina 4 hornallas', 'Gas natural/envasado', 'Cocina', 1800000, 6, 'ACTIVO');
+```
+
+Se puede pegar directo en la Query Tool de pgAdmin4 o en `psql`. **Preferí pgAdmin4 (o guardar el script como archivo `.sql` en UTF-8) antes que pegarlo en una terminal de Windows sin UTF-8**: pegar texto con tildes/ñ en una terminal mal configurada puede corromper los caracteres (por ejemplo `Climatización` guardado como `ClimatizaciÃ³n`).
+
+`articulo.id_articulo` es `GENERATED ALWAYS AS IDENTITY`: Postgres rechaza cualquier `INSERT` que indique `id_articulo` a mano (salvo `OVERRIDING SYSTEM VALUE`, que no se usa acá). Así se evita desincronizar la secuencia insertando ids manualmente.
+
 ---
 
 ## Datos de ejemplo y usuarios de prueba
@@ -312,6 +329,7 @@ export DB_PASSWORD="tu_contrasena"
 
 - **Reiniciar tras cada cambio:** Maven copia los archivos estáticos al arrancar, así que cualquier cambio en `src/` requiere reiniciar la aplicación. Después, recargá el navegador con `Ctrl + F5`.
 - **Esquema:** `spring.jpa.hibernate.ddl-auto=update` agrega tablas o columnas nuevas si faltan, pero **nunca borra** las que sobran. Si eliminás una entidad, la tabla hay que borrarla a mano.
+- **`articulo.id_articulo` es IDENTITY:** se migró de `DEFAULT nextval(...)` a `GENERATED ALWAYS AS IDENTITY` para que no se pueda insertar el id a mano por error (ver "Alta de artículos por SQL"). `Articulo.java` no necesitó cambios: ya usaba `GenerationType.IDENTITY`.
 - **Logs:** la terminal muestra solo errores críticos. Si algo falla (por ejemplo, un error de PostgreSQL al guardar o eliminar), el detalle aparece ahí.
 - **Tests:** por ahora solo existe `SistemaApplicationTests` (`contextLoads`).
 
@@ -332,6 +350,8 @@ export DB_PASSWORD="tu_contrasena"
 | El formulario no sugiere productos | La tabla `producto` está vacía: restaurá `db/ngo_ans.sql` o registrá una venta con cliente. |
 | Un técnico no ve el botón "Actualizar estado" | La solicitud no está asignada a ese técnico o ya está `FINALIZADA`. |
 | No se puede ejecutar `iniciar.ps1` | Política de ejecución de PowerShell: `Set-ExecutionPolicy -Scope Process RemoteSigned`. |
+| Las tildes/ñ quedan mal guardadas (`ClimatizaciÃ³n`) al cargar artículos por SQL | La terminal donde se pegó el script no estaba en UTF-8. Usá pgAdmin4 (Query Tool) o un archivo `.sql` guardado en UTF-8 en vez de pegar en una terminal de Windows sin configurar. |
+| `INSERT` a `articulo` falla con "cannot insert a non-DEFAULT value into column id_articulo" | Es esperado: la columna es `GENERATED ALWAYS AS IDENTITY`. No incluyas `id_articulo` en el `INSERT`. |
 
 ---
 
@@ -343,6 +363,6 @@ Prototipo académico con fines demostrativos, no preparado para producción. Lim
 - **Usuarios:** el administrador puede crearlos, pero todavía no hay forma de editarlos, desactivarlos ni restablecer su contraseña desde la interfaz.
 - **Roles:** se administran directamente en la base de datos.
 - **Productos:** solo se generan a partir de ventas con cliente; no hay pantalla para crearlos ni editarlos. Su número de serie es interno (`VTA-...`), no el de fábrica.
-- **Artículos:** existe el endpoint para ajustar el stock (`PUT /api/articulos/{id}/stock`), pero la interfaz todavía no tiene un botón para usarlo, ni para editar o desactivar artículos.
+- **Artículos:** existe el endpoint para ajustar el stock (`PUT /api/articulos/{id}/stock`), pero la interfaz todavía no tiene un botón para usarlo, ni para editar o desactivar artículos. Como alternativa, se puede cargar stock nuevo por SQL (ver "Alta de artículos por SQL").
 - **Estados:** el cambio manual de estado hecho por `ADMINISTRADOR` o `ATENCION` no queda registrado en el seguimiento, y el backend no valida que el valor enviado sea uno de los cuatro estados oficiales.
 - **Datos de ejemplo:** el respaldo incluye usuarios de prueba; esas cuentas y sus contraseñas deben reemplazarse antes de cualquier uso real.
