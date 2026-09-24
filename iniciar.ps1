@@ -15,7 +15,7 @@ Get-Job | Remove-Job -Force -ErrorAction SilentlyContinue
 $dbUser = Read-Host "Usuario de PostgreSQL (por defecto 'postgres')"
 if ([string]::IsNullOrWhiteSpace($dbUser)) { $dbUser = "postgres" }
 
-$dbPass = Read-Host -AsSecureString "Contrasenha de PostgreSQL"
+$dbPass = Read-Host -AsSecureString "Contrasena de PostgreSQL"
 $BSTR = [System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($dbPass)
 Clear-Variable dbPass
 $plainPass = [System.Runtime.InteropServices.Marshal]::PtrToStringAuto($BSTR)
