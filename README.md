@@ -1,8 +1,8 @@
 # NGO-ANS
 
-Sistema interno de gestión para NGO SAECA, desarrollado como aplicación web full-stack con Java, Spring Boot y PostgreSQL. El proyecto combina un backend REST protegido con Spring Security y un frontend estático en HTML, CSS y JavaScript.
+Sistema interno de gestión para NGO SAECA, desarrollado como aplicación web full-stack con Java, Spring Boot y PostgreSQL. Combina un backend REST protegido con Spring Security y un frontend estático en HTML, CSS y JavaScript.
 
-El repositorio actual incluye dos líneas de negocio principales: soporte técnico/garantías y gestión de ventas. La seguridad, permisos y flujo de trabajo están definidos por roles y validaciones en backend.
+El sistema cubre dos líneas de negocio: **servicio técnico y garantías** (solicitudes, asignación de técnicos, diagnóstico y seguimiento) y **ventas** (catálogo con stock y registro de ventas). Los permisos y el flujo de trabajo se definen por roles y se validan en el backend.
 
 ---
 
@@ -12,73 +12,100 @@ El repositorio actual incluye dos líneas de negocio principales: soporte técni
 | ---- | ---------- |
 | Backend | Java 21, Spring Boot 4.1.1 |
 | Web | Spring Web MVC |
-| Persistencia | Spring Data JPA |
+| Persistencia | Spring Data JPA (Hibernate) |
+| Validación | Bean Validation (`@Pattern` en `Cliente`) |
 | Seguridad | Spring Security + BCrypt |
 | Base de datos | PostgreSQL |
-| Frontend | HTML5, CSS3, JavaScript nativo |
+| Frontend | HTML5, CSS3, JavaScript nativo (sin framework) |
 | Build | Maven Wrapper (`mvnw` / `mvnw.cmd`) |
 
 ---
 
 ## Roles del sistema
 
-La aplicación usa roles con permisos diferenciados en la configuración de seguridad y en los controladores.
-
 | Rol | Propósito principal | Permisos clave |
 | --- | --- | --- |
-| `ADMINISTRADOR` | Control total del sistema | administra usuarios, clientes, productos, solicitudes, ventas, stock y eliminación de registros |
-| `ATENCION` | Recepción y gestión operativa | crea clientes, productos, solicitudes, asigna técnicos y cambia estados |
-| `VENDEDOR` | Portal de ventas | registra ventas y consulta su propio historial |
-| `TECNICO` | Atención técnica | registra diagnóstico y finaliza solicitudes asignadas |
+| `ADMINISTRADOR` | Control total | Crea usuarios, elimina solicitudes, asigna técnicos, cambia estados, vende, da de alta artículos y ajusta stock |
+| `ATENCION` | Recepción y gestión operativa | Registra clientes y solicitudes, asigna técnicos y cambia el estado de las solicitudes |
+| `TECNICO` | Atención técnica | Ve todas las solicitudes; sobre las que tiene asignadas, registra diagnóstico y las finaliza |
+| `VENDEDOR` | Portal de ventas | Registra clientes y ventas, y consulta solo sus propias ventas |
 
-La lógica está implementada con `hasRole(...)` y `hasAnyRole(...)` en `SecurityConfig`, y además se usan validaciones por `@PreAuthorize` en los controladores relevantes.
+Los permisos se aplican en dos niveles: `SecurityConfig` (reglas por ruta) y `@PreAuthorize` en los controladores. Además, el backend exige que un `TECNICO` solo pueda avanzar las solicitudes que tiene asignadas.
 
 ---
 
 ## Módulos principales
 
-### 1. Login y autenticación
+### 1. Login y sesión
 
-- La aplicación usa formulario de login con sesión HTTP.
-- Las credenciales se guardan cifradas con BCrypt.
-- El acceso a páginas y endpoints está protegido por Spring Security.
-- La redirección post-login envía a:
-  - `ADMINISTRADOR` / `ATENCION` / `TECNICO` → panel principal (`/index.html`)
-  - `VENDEDOR` → portal de ventas (`/portal-ventas.html`)
+- Formulario de login con sesión HTTP; las contraseñas se guardan con BCrypt.
+- Solo pueden iniciar sesión los usuarios con `estado = 'ACTIVO'`.
+- Después del login: `VENDEDOR` va al portal de ventas (`/portal-ventas.html`); el resto va al panel principal (`/index.html`).
+- Todas las pantallas internas muestran el nombre, el rol y un botón **Cerrar sesión** en el encabezado.
 
-### 2. Gestión de solicitudes y garantías
+### 2. Panel de solicitudes
 
-- Registro de clientes y productos.
-- Alta de solicitudes de servicio técnico.
-- Consulta y filtro de solicitudes por documento del cliente.
-- Asignación de una solicitud a un técnico.
-- Cambio de estado con seguimiento.
-- Visualización del historial de diagnóstico y cierre.
-- Validación de garantía basada en la fecha de venta y fecha de vencimiento del producto.
+- Tabla de solicitudes con número, cliente, documento, producto, técnico, estado y fecha.
+- Búsqueda por número de documento del cliente (coincidencia parcial).
+- Al hacer clic en una solicitud se abre su detalle, con el historial de seguimiento (diagnósticos y cierre).
+- La columna **Acciones** depende del rol:
+  - `ADMINISTRADOR`: botón **Eliminar** (borra también sus asignaciones y su seguimiento).
+  - `TECNICO`: botón **Actualizar estado** en las solicitudes que tiene asignadas y no están finalizadas.
+  - `ATENCION`: no tiene columna de acciones (asigna y cambia el estado desde los selectores de la tabla).
+- `ADMINISTRADOR` y `ATENCION` pueden asignar un técnico y cambiar el estado desde selectores en la propia tabla.
 
-### 3. Portal de ventas
+### 3. Nueva solicitud
 
-- Catálogo de artículos con stock.
-- Registro de ventas por vendedor.
-- Descuento automático de stock.
-- Generación de productos a partir de la venta para que puedan entrar en flujo de garantías.
-- Vista limitada por rol: `VENDEDOR` solo ve sus ventas; `ADMINISTRADOR` puede ver todas.
+- Se escribe el documento del cliente: si existe, se autocompletan sus datos (y se pueden corregir); si no, se crea un cliente nuevo.
+- Se ofrecen los productos que ese cliente ya compró, o se pueden buscar por marca, modelo, tipo y número de serie.
+- Antes de registrar se muestra el estado de la garantía del producto.
+- Solo pueden registrar solicitudes `ADMINISTRADOR` y `ATENCION`.
 
-### 4. Administración de usuarios
+### 4. Garantías
 
-- Solo `ADMINISTRADOR` puede acceder a la gestión de usuarios.
-- Se gestionan usuarios con roles de atención, técnico y vendedor.
-- El correo debe ser único y la contraseña se mantiene cifrada.
+La garantía **no se guarda en una tabla**: se calcula siempre a partir de `producto.fecha_venta` + 1 año. Está vigente mientras esa fecha de fin no haya pasado. Se consulta con `GET /api/productos/{id}/garantia`.
+
+### 5. Portal de ventas
+
+- Catálogo de artículos activos con su stock.
+- Registro de ventas con varios artículos; el precio se guarda en cada renglón y el stock se descuenta en la misma transacción.
+- La venta puede tener un cliente asociado o ser a consumidor final.
+- Si la venta tiene cliente, se genera un **producto por cada unidad vendida** (con número de serie interno `VTA-{venta}-{artículo}-{n}`), para que luego pueda entrar en el flujo de garantías. Las ventas a consumidor final no generan productos.
+- `VENDEDOR` solo ve sus ventas; `ADMINISTRADOR` ve todas y es el único que puede dar de alta artículos.
+
+### 6. Administración de usuarios
+
+- Solo `ADMINISTRADOR` accede a `usuarios.html`.
+- Permite crear usuarios con rol `ATENCION`, `TECNICO` o `VENDEDOR`.
+- El correo debe ser único y la contraseña (mínimo 8 caracteres) se guarda cifrada.
 
 ---
 
-## Estados del flujo de trabajo
+## Flujo de estados de una solicitud
 
-El sistema usa este flujo principal para solicitudes técnicas:
+`RECIBIDA` → `ASIGNADA` → `EN DIAGNÓSTICO` → `FINALIZADA`
 
-`RECIBIDA` → `ASIGNADA` → `EN DIAGNOSTICO` → `FINALIZADA`
+- La solicitud nace en `RECIBIDA`.
+- Al asignar o reasignar un técnico pasa a `ASIGNADA`. Una solicitud `FINALIZADA` no se reabre.
+- El técnico asignado la pasa a `EN DIAGNÓSTICO` (con un texto de diagnóstico opcional, máximo 2000 caracteres) o a `FINALIZADA`. Cada uno de esos cambios queda registrado en `seguimiento`.
+- `ADMINISTRADOR` y `ATENCION` también pueden cambiar el estado manualmente desde el panel; ese cambio **no** genera registro de seguimiento.
 
-La lógica exacta se encuentra en los modelos y endpoints de servicio. La solicitud nace en `RECIBIDA`, puede ser asignada por `ADMINISTRADOR` o `ATENCION`, y el `TECNICO` puede registrar diagnóstico y cierre para la solicitud que le fue asignada.
+---
+
+## Modelo de datos
+
+| Tabla | Contenido |
+| ----- | --------- |
+| `cliente` | Nombre, documento (único, solo números), teléfono y correo |
+| `producto` | Equipo vendido: marca, modelo, N° de serie (único), tipo, cliente dueño y fecha de venta |
+| `solicitud` | Solicitud de servicio: cliente, producto, descripción y estado actual |
+| `asignacion` | Historial de técnicos asignados a cada solicitud (la última es la vigente) |
+| `seguimiento` | Registros de diagnóstico y cierre de cada solicitud |
+| `usuario` / `rol` | Usuarios del sistema y sus roles |
+| `articulo` | Catálogo de venta con precio y stock |
+| `venta` / `detalle_venta` | Ventas y sus renglones |
+
+`articulo` es independiente de `producto`: un artículo es un tipo de mercadería con stock; un producto es un equipo concreto con número de serie y dueño.
 
 ---
 
@@ -90,41 +117,35 @@ NGO-ANS/
 │   └── ngo_ans.sql
 ├── src/
 │   ├── main/
-│   │   ├── java/
-│   │   │   └── com/
-│   │   │       └── ngo/
-│   │   │           └── sistema/
-│   │   │               ├── Articulo.java
-│   │   │               ├── ArticuloRepository.java
-│   │   │               ├── Asignacion.java
-│   │   │               ├── AsignacionController.java
-│   │   │               ├── AsignacionRepository.java
-│   │   │               ├── Cliente.java
-│   │   │               ├── ClienteRepository.java
-│   │   │               ├── CustomUserDetailsService.java
-│   │   │               ├── DetalleVenta.java
-│   │   │               ├── Garantia.java
-│   │   │               ├── GarantiaRepository.java
-│   │   │               ├── Producto.java
-│   │   │               ├── ProductoRepository.java
-│   │   │               ├── Rol.java
-│   │   │               ├── RolRepository.java
-│   │   │               ├── SecurityConfig.java
-│   │   │               ├── Seguimiento.java
-│   │   │               ├── SeguimientoController.java
-│   │   │               ├── SeguimientoRepository.java
-│   │   │               ├── ServicioAutorizado.java
-│   │   │               ├── SistemaApplication.java
-│   │   │               ├── SistemaController.java
-│   │   │               ├── Solicitud.java
-│   │   │               ├── SolicitudRepository.java
-│   │   │               ├── Usuario.java
-│   │   │               ├── UsuarioController.java
-│   │   │               ├── UsuarioPrincipal.java
-│   │   │               ├── UsuarioRepository.java
-│   │   │               ├── Venta.java
-│   │   │               ├── VentaController.java
-│   │   │               └── VentaRepository.java
+│   │   ├── java/com/ngo/sistema/
+│   │   │   ├── Articulo.java
+│   │   │   ├── ArticuloRepository.java
+│   │   │   ├── Asignacion.java
+│   │   │   ├── AsignacionController.java
+│   │   │   ├── AsignacionRepository.java
+│   │   │   ├── Cliente.java
+│   │   │   ├── ClienteRepository.java
+│   │   │   ├── CustomUserDetailsService.java
+│   │   │   ├── DetalleVenta.java
+│   │   │   ├── Producto.java
+│   │   │   ├── ProductoRepository.java
+│   │   │   ├── Rol.java
+│   │   │   ├── RolRepository.java
+│   │   │   ├── SecurityConfig.java
+│   │   │   ├── Seguimiento.java
+│   │   │   ├── SeguimientoController.java
+│   │   │   ├── SeguimientoRepository.java
+│   │   │   ├── SistemaApplication.java
+│   │   │   ├── SistemaController.java
+│   │   │   ├── Solicitud.java
+│   │   │   ├── SolicitudRepository.java
+│   │   │   ├── Usuario.java
+│   │   │   ├── UsuarioController.java
+│   │   │   ├── UsuarioPrincipal.java
+│   │   │   ├── UsuarioRepository.java
+│   │   │   ├── Venta.java
+│   │   │   ├── VentaController.java
+│   │   │   └── VentaRepository.java
 │   │   └── resources/
 │   │       ├── application.properties
 │   │       └── static/
@@ -140,33 +161,23 @@ NGO-ANS/
 │   │           ├── usuarios.html
 │   │           └── usuarios.js
 │   └── test/
-│       └── java/
-│           └── com/
-│               └── ngo/
-│                   └── sistema/
-│                       └── SistemaApplicationTests.java
+│       └── java/com/ngo/sistema/
+│           └── SistemaApplicationTests.java
 ├── iniciar.ps1
 ├── mvnw
 ├── mvnw.cmd
 ├── pom.xml
 ├── README.md
-├── target/
-│   ├── classes/
-│   ├── generated-sources/
-│   ├── generated-test-sources/
-│   ├── maven-status/
-│   ├── test-classes/
-│   └── ...
 └── .gitignore
 ```
+
+La carpeta `target/` la genera Maven al compilar y no se versiona.
 
 ---
 
 ## Configuración de la base de datos
 
-La aplicación espera una base PostgreSQL local llamada `ngo_saeca`.
-
-El archivo `src/main/resources/application.properties` usa estas variables:
+La aplicación espera una base PostgreSQL local llamada `ngo_saeca`. El archivo `src/main/resources/application.properties` usa:
 
 ```properties
 spring.datasource.url=jdbc:postgresql://localhost:5432/ngo_saeca
@@ -174,15 +185,22 @@ spring.datasource.username=${DB_USER:postgres}
 spring.datasource.password=${DB_PASSWORD}
 ```
 
-Esto significa que el usuario y contraseña no se guardan hardcodeados en el repositorio. Se inyectan como variables de entorno `DB_USER` y `DB_PASSWORD`.
+El usuario y la contraseña no están en el repositorio: se pasan con las variables de entorno `DB_USER` (por defecto `postgres`) y `DB_PASSWORD`.
+
+### Restaurar el respaldo
+
+```bash
+createdb -U postgres ngo_saeca
+psql -U postgres -d ngo_saeca -f db/ngo_ans.sql
+```
+
+`db/ngo_ans.sql` es un volcado de `pg_dump` 18 con el esquema y los datos de ejemplo. Usá un cliente `psql` reciente: el archivo incluye los comandos `\restrict` / `\unrestrict` que agrega `pg_dump`.
 
 ---
 
 ## Datos de ejemplo y usuarios de prueba
 
-El script SQL en `db/ngo_ans.sql` incluye el esquema y datos de ejemplo. Entre ellos se cargan roles y usuarios de prueba.
-
-Los correos incluidos en la base son:
+El respaldo incluye los cuatro roles, un usuario por rol, clientes y productos ficticios, y un artículo de ejemplo en el catálogo.
 
 | Correo | Rol |
 | ------ | --- |
@@ -191,49 +209,65 @@ Los correos incluidos en la base son:
 | `vendedor@ngosaeca.com.py` | `VENDEDOR` |
 | `tecnico@ngosaeca.com.py` | `TECNICO` |
 
-Las contraseñas quedan cifradas con BCrypt dentro del respaldo SQL, por lo que no se exponen en el repositorio. Para crear nuevos usuarios o restablecer contraseñas, se debe hacer desde la base local o a través del flujo del sistema cuando corresponda.
+Las contraseñas están cifradas con BCrypt dentro del respaldo, por lo que no aparecen en el repositorio.
+
+### Restablecer la contraseña de un usuario
+
+Desde `psql`, con la extensión `pgcrypto` (genera hashes BCrypt compatibles con Spring Security):
+
+```sql
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
+
+UPDATE usuario
+SET clave = crypt('NuevaClave123', gen_salt('bf', 10))
+WHERE correo = 'admin@ngosaeca.com.py';
+```
 
 ---
 
-## API REST principal
+## API REST
 
-Todos los endpoints bajo `/api` requieren autenticación, salvo los recursos públicos del login y assets estáticos.
+Todas las rutas requieren sesión iniciada, salvo `/login.html`, `/login` y `/style.css`.
 
 | Método | Ruta | Descripción | Acceso |
 | ------ | ---- | ----------- | ------ |
-| `GET` | `/api/usuario/actual` | Devuelve datos del usuario autenticado | autenticado |
+| `GET` | `/api/usuario/actual` | Datos del usuario autenticado | autenticado |
+| `GET` | `/api/clientes` | Clientes que tienen al menos un producto | autenticado |
+| `GET` | `/api/clientes/buscar?documento=` | Busca un cliente por documento exacto (404 si no existe) | autenticado |
+| `GET` | `/api/clientes/{id}/productos` | Productos de un cliente | autenticado |
 | `POST` | `/api/clientes` | Crea un cliente | `ADMINISTRADOR`, `ATENCION`, `VENDEDOR` |
-| `GET` | `/api/clientes` | Lista clientes con productos vinculados | autenticado |
-| `GET` | `/api/clientes/buscar` | Busca cliente por documento | autenticado |
-| `POST` | `/api/productos` | Crea un producto | `ADMINISTRADOR`, `ATENCION` |
-| `GET` | `/api/productos` | Lista productos | autenticado |
-| `GET` | `/api/productos/{id}/garantia` | Consulta garantía de un producto | autenticado |
-| `POST` | `/api/solicitudes` | Registra una solicitud | `ADMINISTRADOR`, `ATENCION` |
-| `GET` | `/api/solicitudes` | Lista solicitudes | autenticado |
-| `GET` | `/api/solicitudes/buscar` | Busca por documento del cliente | autenticado |
+| `PUT` | `/api/clientes/{id}` | Actualiza nombre, teléfono y correo | `ADMINISTRADOR`, `ATENCION`, `VENDEDOR` |
+| `GET` | `/api/productos` | Lista de productos | autenticado |
+| `GET` | `/api/productos/{id}/garantia` | Garantía calculada de un producto | autenticado |
+| `GET` | `/api/solicitudes` | Lista de solicitudes | autenticado |
+| `GET` | `/api/solicitudes/buscar?documento=` | Busca por documento del cliente | autenticado |
 | `GET` | `/api/solicitudes/{id}` | Detalle de una solicitud | autenticado |
-| `POST` | `/api/solicitudes/{id}/asignar` | Asigna un técnico | `ADMINISTRADOR`, `ATENCION` |
 | `GET` | `/api/solicitudes/{id}/seguimiento` | Historial de seguimiento | autenticado |
-| `POST` | `/api/solicitudes/{id}/diagnostico` | Registra diagnóstico | `TECNICO` |
-| `POST` | `/api/solicitudes/{id}/finalizar` | Finaliza solicitud | `TECNICO` |
-| `PUT` | `/api/solicitudes/{id}/estado` | Cambia estado de la solicitud | `ADMINISTRADOR`, `ATENCION` |
-| `DELETE` | `/api/solicitudes/{id}` | Elimina solicitud | `ADMINISTRADOR` |
-| `GET` | `/api/usuarios` | Lista usuarios | `ADMINISTRADOR` |
-| `POST` | `/api/usuarios` | Crea usuario | `ADMINISTRADOR` |
-| `GET` | `/api/articulos` | Catálogo de artículos | autenticado |
+| `POST` | `/api/solicitudes` | Registra una solicitud | `ADMINISTRADOR`, `ATENCION` |
+| `PUT` | `/api/solicitudes/{id}/estado` | Cambia el estado manualmente | `ADMINISTRADOR`, `ATENCION` |
+| `POST` | `/api/solicitudes/{id}/asignar` | Asigna un técnico | `ADMINISTRADOR`, `ATENCION` |
+| `POST` | `/api/solicitudes/{id}/diagnostico` | Pasa a `EN DIAGNÓSTICO` (texto opcional) | `TECNICO` asignado |
+| `POST` | `/api/solicitudes/{id}/finalizar` | Finaliza la solicitud | `TECNICO` asignado |
+| `DELETE` | `/api/solicitudes/{id}` | Elimina la solicitud y su historial | `ADMINISTRADOR` |
+| `GET` | `/api/tecnicos` | Técnicos activos, para el selector de asignación | `ADMINISTRADOR`, `ATENCION` |
+| `GET` | `/api/usuarios` | Lista de usuarios | `ADMINISTRADOR` |
+| `POST` | `/api/usuarios` | Crea un usuario (`ATENCION`, `TECNICO` o `VENDEDOR`) | `ADMINISTRADOR` |
+| `GET` | `/api/articulos` | Catálogo de artículos activos | autenticado |
 | `POST` | `/api/articulos` | Alta de artículo | `ADMINISTRADOR` |
-| `PUT` | `/api/articulos/{id}/stock` | Ajusta stock | `ADMINISTRADOR` |
-| `GET` | `/api/ventas` | Consulta ventas | `VENDEDOR`, `ADMINISTRADOR` |
-| `POST` | `/api/ventas` | Registra venta | `VENDEDOR`, `ADMINISTRADOR` |
+| `PUT` | `/api/articulos/{id}/stock` | Ajusta el stock de un artículo | `ADMINISTRADOR` |
+| `GET` | `/api/ventas` | Ventas (todas para el administrador, solo las propias para el vendedor) | `VENDEDOR`, `ADMINISTRADOR` |
+| `POST` | `/api/ventas` | Registra una venta y descuenta stock | `VENDEDOR`, `ADMINISTRADOR` |
 
-Además, los endpoints de autenticación expuestos por Spring Security son:
-
-- `POST /login`
-- `POST /logout`
+Autenticación de Spring Security: `POST /login` y `POST /logout`.
 
 ---
 
 ## Ejecución local
+
+### Requisitos
+
+- Java 21
+- PostgreSQL con la base `ngo_saeca` creada y el respaldo restaurado (ver arriba)
 
 ### Opción recomendada: script de inicio
 
@@ -243,11 +277,7 @@ En PowerShell, desde la raíz del proyecto:
 ./iniciar.ps1
 ```
 
-El script solicita el usuario y contraseña de PostgreSQL, exporta las variables de entorno `DB_USER` y `DB_PASSWORD`, levanta la aplicación con Maven Wrapper y abre el navegador en:
-
-```text
-http://localhost:8080
-```
+El script pide el usuario y la contraseña de PostgreSQL, define `DB_USER` y `DB_PASSWORD`, levanta la aplicación con Maven Wrapper y abre el navegador en `http://localhost:8080`.
 
 ### Opción manual
 
@@ -267,47 +297,23 @@ export DB_PASSWORD="tu_contrasena"
 ./mvnw spring-boot:run
 ```
 
----
+### Probar el sistema
 
-## Notas importantes
-
-- El proyecto es un prototipo académico/local y no está pensado para ejecutarse sin una base PostgreSQL local.
-- La versión actual incluye tanto gestión de soporte técnico como portal de ventas, por lo que los permisos están divididos por rol.
-- El frontend es estático y se entrega a través de Spring Boot; la aplicación no usa un cliente SPA separado.
-- La validación de seguridad y permisos se hace principalmente en `SecurityConfig` y en los controladores con `@PreAuthorize`.
-
----
-
-## Sugerencias de uso rápido
-
-1. Crear la base `ngo_saeca` y restaurar el contenido de `db/ngo_ans.sql`.
-2. Iniciar la app con `./iniciar.ps1`.
-3. Ingresar con uno de los usuarios cargados en la base.
-4. Usar `ADMINISTRADOR` para administrar usuarios y permisos.
-5. Usar `ATENCION` para registrar clientes y solicitudes.
-6. Usar `VENDEDOR` para registrar ventas.
-7. Usar `TECNICO` para diagnosticar y cerrar solicitudes asignadas.
-
-> ./mvnw spring-boot:run
-> ```
-
-### 6. Probar el sistema
-
-Cuando la terminal indique que la aplicación inició, abrí <http://localhost:8080>. Como todavía no hay sesión, te va a llevar a la pantalla de login:
-
-1. Iniciá sesión con uno de los usuarios del paso 4.
-2. En el panel principal (<http://localhost:8080/index.html>) vas a ver las solicitudes; probá la búsqueda por documento y hacé clic en una fila para ver su detalle.
-3. En Nueva solicitud (<http://localhost:8080/nueva-solicitud.html>), escribí en cualquier campo del producto, elegí uno de los sugeridos y revisá el estado de su garantía antes de registrar la solicitud.
-
-Para cerrar la sesión existe la ruta `/logout`.
+1. Abrí <http://localhost:8080>; sin sesión te lleva al login.
+2. Iniciá sesión con uno de los usuarios de prueba.
+3. En el panel principal (`/index.html`) probá la búsqueda por documento y hacé clic en una fila para ver el detalle y el seguimiento.
+4. Con `ATENCION` o `ADMINISTRADOR`, entrá a **Nueva solicitud**, escribí el documento de un cliente, elegí uno de sus productos y revisá el estado de la garantía antes de registrar.
+5. Asigná un técnico desde la tabla; después iniciá sesión como `TECNICO` para actualizar el estado desde **Actualizar estado**.
+6. Con `VENDEDOR` o `ADMINISTRADOR`, probá una venta desde el **Portal de Ventas**.
 
 ---
 
 ## Notas para desarrollo
 
-- Reiniciar tras cada cambio: Maven copia los archivos estáticos (`index.html`, `app.js`, `style.css`, etc.) al arrancar, así que cualquier cambio en `src/` requiere reiniciar la aplicación. Después, recargá el navegador con `Ctrl + F5`.
-- Esquema de la base de datos: `spring.jpa.hibernate.ddl-auto=update` hace que Hibernate agregue tablas o columnas nuevas si faltan, pero no reemplaza la importación inicial de `db/ngo_ans.sql`.
-- Logs: la terminal muestra solo errores críticos. Si algo falla (por ejemplo, un error de PostgreSQL al guardar o eliminar), el detalle aparece ahí.
+- **Reiniciar tras cada cambio:** Maven copia los archivos estáticos al arrancar, así que cualquier cambio en `src/` requiere reiniciar la aplicación. Después, recargá el navegador con `Ctrl + F5`.
+- **Esquema:** `spring.jpa.hibernate.ddl-auto=update` agrega tablas o columnas nuevas si faltan, pero **nunca borra** las que sobran. Si eliminás una entidad, la tabla hay que borrarla a mano.
+- **Logs:** la terminal muestra solo errores críticos. Si algo falla (por ejemplo, un error de PostgreSQL al guardar o eliminar), el detalle aparece ahí.
+- **Tests:** por ahora solo existe `SistemaApplicationTests` (`contextLoads`).
 
 ---
 
@@ -318,11 +324,13 @@ Para cerrar la sesión existe la ruta `/logout`.
 | `FATAL: password authentication failed` | Usuario o contraseña de PostgreSQL incorrectos en `DB_USER` / `DB_PASSWORD`. |
 | `database "ngo_saeca" does not exist` | Falta crear la base local con ese nombre exacto. |
 | `Port 8080 was already in use` | Otro proceso ocupa el puerto; cerralo o cambiá `server.port` en `application.properties`. |
-| No recuerdo la contraseña de un usuario | Restablecela con el SQL del paso 4. |
-| "Correo o contraseña incorrectos" | El correo no existe en `usuario`, la contraseña no coincide, o el usuario no tiene `estado = 'ACTIVO'`. |
-| Entro, pero no puedo crear, cambiar el estado o eliminar | El rol del usuario no permite esa acción, o el nombre del rol no es exactamente `ADMINISTRADOR`, `FUNCIONARIO` o `TECNICO`. |
-| El panel carga vacío | La base está creada pero sin datos: importá `db/ngo_ans.sql`. |
-| El formulario no sugiere productos | La tabla `producto` está vacía: importá `db/ngo_ans.sql`. |
+| Errores con `\restrict` al restaurar el respaldo | El cliente `psql` es antiguo; usá una versión reciente. |
+| "Correo o contraseña incorrectos" | El correo no existe en `usuario`, la contraseña no coincide o el usuario no tiene `estado = 'ACTIVO'`. |
+| No recuerdo la contraseña de un usuario | Restablecela con el SQL de la sección "Restablecer la contraseña de un usuario". |
+| Entro, pero no puedo crear, cambiar el estado o eliminar | El rol del usuario no permite esa acción. Los nombres de rol válidos son `ADMINISTRADOR`, `ATENCION`, `TECNICO` y `VENDEDOR`. |
+| El panel carga vacío | Hay que crear solicitudes desde **Nueva solicitud**; el respaldo no trae solicitudes cargadas. |
+| El formulario no sugiere productos | La tabla `producto` está vacía: restaurá `db/ngo_ans.sql` o registrá una venta con cliente. |
+| Un técnico no ve el botón "Actualizar estado" | La solicitud no está asignada a ese técnico o ya está `FINALIZADA`. |
 | No se puede ejecutar `iniciar.ps1` | Política de ejecución de PowerShell: `Set-ExecutionPolicy -Scope Process RemoteSigned`. |
 
 ---
@@ -331,10 +339,10 @@ Para cerrar la sesión existe la ruta `/logout`.
 
 Prototipo académico con fines demostrativos, no preparado para producción. Limitaciones conocidas:
 
-- Seguridad: la protección CSRF está desactivada (la API solo la consume el propio frontend); debe reactivarse antes de cualquier despliegue real.
-- Usuarios: un `ADMINISTRADOR` ya puede crear `FUNCIONARIO` y `TECNICO` desde `usuarios.html`, pero todavía no hay forma de editarlos, desactivarlos ni restablecer su contraseña desde la interfaz.
-- Roles, productos y garantías se siguen administrando directamente en la base de datos; no hay pantallas para crearlos o editarlos.
-- La interfaz todavía no tiene un botón para cerrar sesión ni muestra el nombre del usuario conectado (el cierre de sesión existe en la ruta `/logout`).
-- Cada solicitud nueva crea también un cliente nuevo; no se reutilizan clientes existentes, y el cliente de la solicitud no tiene por qué coincidir con el dueño de la garantía del producto.
-- La asignación de técnicos, el diagnóstico y el historial de seguimiento todavía no se gestionan desde la interfaz.
-- Los datos de ejemplo del volcado incluyen registros y usuarios de prueba; esas cuentas y sus contraseñas deben reemplazarse antes de cualquier uso real.
+- **Seguridad:** la protección CSRF está desactivada (la API solo la consume el propio frontend); debe reactivarse antes de cualquier despliegue real.
+- **Usuarios:** el administrador puede crearlos, pero todavía no hay forma de editarlos, desactivarlos ni restablecer su contraseña desde la interfaz.
+- **Roles:** se administran directamente en la base de datos.
+- **Productos:** solo se generan a partir de ventas con cliente; no hay pantalla para crearlos ni editarlos. Su número de serie es interno (`VTA-...`), no el de fábrica.
+- **Artículos:** existe el endpoint para ajustar el stock (`PUT /api/articulos/{id}/stock`), pero la interfaz todavía no tiene un botón para usarlo, ni para editar o desactivar artículos.
+- **Estados:** el cambio manual de estado hecho por `ADMINISTRADOR` o `ATENCION` no queda registrado en el seguimiento, y el backend no valida que el valor enviado sea uno de los cuatro estados oficiales.
+- **Datos de ejemplo:** el respaldo incluye usuarios de prueba; esas cuentas y sus contraseñas deben reemplazarse antes de cualquier uso real.
