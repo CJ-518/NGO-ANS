@@ -2,12 +2,12 @@
 -- PostgreSQL database dump
 --
 
-\restrict xOGGA8ZSea3cTM6cT4jQ9GPLrVBz1Pl2RNbgWmKBzugznWpEd8iWJYHAHwoXNmY
+\restrict jl6t5O6vXlONZNr2R0jTsD03PxSVF6USwiKtSbYmbVZhwsDlO11Ko6YxinV7OwM
 
 -- Dumped from database version 18.6
 -- Dumped by pg_dump version 18.6
 
--- Started on 2026-09-23 01:26:19
+-- Started on 2026-09-24 05:57:00
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -26,7 +26,7 @@ SET default_tablespace = '';
 SET default_table_access_method = heap;
 
 --
--- TOC entry 236 (class 1259 OID 18351)
+-- TOC entry 234 (class 1259 OID 18351)
 -- Name: articulo; Type: TABLE; Schema: public; Owner: postgres
 --
 
@@ -46,7 +46,7 @@ CREATE TABLE public.articulo (
 ALTER TABLE public.articulo OWNER TO postgres;
 
 --
--- TOC entry 235 (class 1259 OID 18350)
+-- TOC entry 233 (class 1259 OID 18350)
 -- Name: articulo_id_articulo_seq; Type: SEQUENCE; Schema: public; Owner: postgres
 --
 
@@ -61,8 +61,8 @@ CREATE SEQUENCE public.articulo_id_articulo_seq
 ALTER SEQUENCE public.articulo_id_articulo_seq OWNER TO postgres;
 
 --
--- TOC entry 5174 (class 0 OID 0)
--- Dependencies: 235
+-- TOC entry 5156 (class 0 OID 0)
+-- Dependencies: 233
 -- Name: articulo_id_articulo_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
 
@@ -70,7 +70,7 @@ ALTER SEQUENCE public.articulo_id_articulo_seq OWNED BY public.articulo.id_artic
 
 
 --
--- TOC entry 232 (class 1259 OID 18127)
+-- TOC entry 230 (class 1259 OID 18127)
 -- Name: asignacion; Type: TABLE; Schema: public; Owner: postgres
 --
 
@@ -85,7 +85,7 @@ CREATE TABLE public.asignacion (
 ALTER TABLE public.asignacion OWNER TO postgres;
 
 --
--- TOC entry 231 (class 1259 OID 18126)
+-- TOC entry 229 (class 1259 OID 18126)
 -- Name: asignacion_id_asignacion_seq; Type: SEQUENCE; Schema: public; Owner: postgres
 --
 
@@ -101,8 +101,8 @@ CREATE SEQUENCE public.asignacion_id_asignacion_seq
 ALTER SEQUENCE public.asignacion_id_asignacion_seq OWNER TO postgres;
 
 --
--- TOC entry 5175 (class 0 OID 0)
--- Dependencies: 231
+-- TOC entry 5157 (class 0 OID 0)
+-- Dependencies: 229
 -- Name: asignacion_id_asignacion_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
 
@@ -128,22 +128,6 @@ CREATE TABLE public.cliente (
 ALTER TABLE public.cliente OWNER TO postgres;
 
 --
--- TOC entry 243 (class 1259 OID 18443)
--- Name: cliente_backup_20260923; Type: TABLE; Schema: public; Owner: postgres
---
-
-CREATE TABLE public.cliente_backup_20260923 (
-    id_cliente bigint,
-    nombre character varying(100),
-    documento character varying(20),
-    telefono character varying(20),
-    correo character varying(100)
-);
-
-
-ALTER TABLE public.cliente_backup_20260923 OWNER TO postgres;
-
---
 -- TOC entry 219 (class 1259 OID 17945)
 -- Name: cliente_id_cliente_seq; Type: SEQUENCE; Schema: public; Owner: postgres
 --
@@ -160,7 +144,7 @@ CREATE SEQUENCE public.cliente_id_cliente_seq
 ALTER SEQUENCE public.cliente_id_cliente_seq OWNER TO postgres;
 
 --
--- TOC entry 5176 (class 0 OID 0)
+-- TOC entry 5158 (class 0 OID 0)
 -- Dependencies: 219
 -- Name: cliente_id_cliente_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
@@ -169,7 +153,7 @@ ALTER SEQUENCE public.cliente_id_cliente_seq OWNED BY public.cliente.id_cliente;
 
 
 --
--- TOC entry 240 (class 1259 OID 18391)
+-- TOC entry 238 (class 1259 OID 18391)
 -- Name: detalle_venta; Type: TABLE; Schema: public; Owner: postgres
 --
 
@@ -187,24 +171,7 @@ CREATE TABLE public.detalle_venta (
 ALTER TABLE public.detalle_venta OWNER TO postgres;
 
 --
--- TOC entry 245 (class 1259 OID 18451)
--- Name: detalle_venta_backup_20260923; Type: TABLE; Schema: public; Owner: postgres
---
-
-CREATE TABLE public.detalle_venta_backup_20260923 (
-    id_detalle bigint,
-    id_venta bigint,
-    id_articulo bigint,
-    cantidad integer,
-    precio_unitario numeric(10,2),
-    subtotal numeric(12,2)
-);
-
-
-ALTER TABLE public.detalle_venta_backup_20260923 OWNER TO postgres;
-
---
--- TOC entry 239 (class 1259 OID 18390)
+-- TOC entry 237 (class 1259 OID 18390)
 -- Name: detalle_venta_id_detalle_seq; Type: SEQUENCE; Schema: public; Owner: postgres
 --
 
@@ -219,8 +186,8 @@ CREATE SEQUENCE public.detalle_venta_id_detalle_seq
 ALTER SEQUENCE public.detalle_venta_id_detalle_seq OWNER TO postgres;
 
 --
--- TOC entry 5177 (class 0 OID 0)
--- Dependencies: 239
+-- TOC entry 5159 (class 0 OID 0)
+-- Dependencies: 237
 -- Name: detalle_venta_id_detalle_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
 
@@ -228,7 +195,7 @@ ALTER SEQUENCE public.detalle_venta_id_detalle_seq OWNED BY public.detalle_venta
 
 
 --
--- TOC entry 242 (class 1259 OID 18422)
+-- TOC entry 240 (class 1259 OID 18455)
 -- Name: garantia; Type: TABLE; Schema: public; Owner: postgres
 --
 
@@ -245,7 +212,7 @@ CREATE TABLE public.garantia (
 ALTER TABLE public.garantia OWNER TO postgres;
 
 --
--- TOC entry 241 (class 1259 OID 18421)
+-- TOC entry 239 (class 1259 OID 18454)
 -- Name: garantia_id_garantia_seq; Type: SEQUENCE; Schema: public; Owner: postgres
 --
 
@@ -294,7 +261,7 @@ CREATE SEQUENCE public.producto_id_producto_seq
 ALTER SEQUENCE public.producto_id_producto_seq OWNER TO postgres;
 
 --
--- TOC entry 5178 (class 0 OID 0)
+-- TOC entry 5160 (class 0 OID 0)
 -- Dependencies: 221
 -- Name: producto_id_producto_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
@@ -333,7 +300,7 @@ CREATE SEQUENCE public.rol_id_rol_seq
 ALTER SEQUENCE public.rol_id_rol_seq OWNER TO postgres;
 
 --
--- TOC entry 5179 (class 0 OID 0)
+-- TOC entry 5161 (class 0 OID 0)
 -- Dependencies: 225
 -- Name: rol_id_rol_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
@@ -342,7 +309,7 @@ ALTER SEQUENCE public.rol_id_rol_seq OWNED BY public.rol.id_rol;
 
 
 --
--- TOC entry 234 (class 1259 OID 18148)
+-- TOC entry 232 (class 1259 OID 18148)
 -- Name: seguimiento; Type: TABLE; Schema: public; Owner: postgres
 --
 
@@ -352,15 +319,14 @@ CREATE TABLE public.seguimiento (
     id_usuario bigint NOT NULL,
     fecha timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
     estado character varying(30) NOT NULL,
-    diagnostico text,
-    observacion text
+    diagnostico text
 );
 
 
 ALTER TABLE public.seguimiento OWNER TO postgres;
 
 --
--- TOC entry 233 (class 1259 OID 18147)
+-- TOC entry 231 (class 1259 OID 18147)
 -- Name: seguimiento_id_seguimiento_seq; Type: SEQUENCE; Schema: public; Owner: postgres
 --
 
@@ -376,8 +342,8 @@ CREATE SEQUENCE public.seguimiento_id_seguimiento_seq
 ALTER SEQUENCE public.seguimiento_id_seguimiento_seq OWNER TO postgres;
 
 --
--- TOC entry 5180 (class 0 OID 0)
--- Dependencies: 233
+-- TOC entry 5162 (class 0 OID 0)
+-- Dependencies: 231
 -- Name: seguimiento_id_seguimiento_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
 
@@ -385,43 +351,33 @@ ALTER SEQUENCE public.seguimiento_id_seguimiento_seq OWNED BY public.seguimiento
 
 
 --
--- TOC entry 228 (class 1259 OID 18069)
+-- TOC entry 242 (class 1259 OID 18467)
 -- Name: servicio_autorizado; Type: TABLE; Schema: public; Owner: postgres
 --
 
 CREATE TABLE public.servicio_autorizado (
     id_servicio bigint NOT NULL,
-    nombre character varying(100) NOT NULL,
     ciudad character varying(100),
-    estado character varying(30) DEFAULT 'ACTIVO'::character varying
+    estado character varying(30),
+    nombre character varying(100) NOT NULL
 );
 
 
 ALTER TABLE public.servicio_autorizado OWNER TO postgres;
 
 --
--- TOC entry 227 (class 1259 OID 18068)
+-- TOC entry 241 (class 1259 OID 18466)
 -- Name: servicio_autorizado_id_servicio_seq; Type: SEQUENCE; Schema: public; Owner: postgres
 --
 
-CREATE SEQUENCE public.servicio_autorizado_id_servicio_seq
-    AS integer
+ALTER TABLE public.servicio_autorizado ALTER COLUMN id_servicio ADD GENERATED BY DEFAULT AS IDENTITY (
+    SEQUENCE NAME public.servicio_autorizado_id_servicio_seq
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
     NO MAXVALUE
-    CACHE 1;
-
-
-ALTER SEQUENCE public.servicio_autorizado_id_servicio_seq OWNER TO postgres;
-
---
--- TOC entry 5181 (class 0 OID 0)
--- Dependencies: 227
--- Name: servicio_autorizado_id_servicio_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
---
-
-ALTER SEQUENCE public.servicio_autorizado_id_servicio_seq OWNED BY public.servicio_autorizado.id_servicio;
+    CACHE 1
+);
 
 
 --
@@ -458,7 +414,7 @@ CREATE SEQUENCE public.solicitud_id_solicitud_seq
 ALTER SEQUENCE public.solicitud_id_solicitud_seq OWNER TO postgres;
 
 --
--- TOC entry 5182 (class 0 OID 0)
+-- TOC entry 5163 (class 0 OID 0)
 -- Dependencies: 223
 -- Name: solicitud_id_solicitud_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
@@ -467,14 +423,13 @@ ALTER SEQUENCE public.solicitud_id_solicitud_seq OWNED BY public.solicitud.id_so
 
 
 --
--- TOC entry 230 (class 1259 OID 18079)
+-- TOC entry 228 (class 1259 OID 18079)
 -- Name: usuario; Type: TABLE; Schema: public; Owner: postgres
 --
 
 CREATE TABLE public.usuario (
     id_usuario bigint NOT NULL,
     id_rol bigint NOT NULL,
-    id_servicio bigint,
     nombre character varying(100) NOT NULL,
     correo character varying(100) NOT NULL,
     clave character varying(255) NOT NULL,
@@ -485,7 +440,7 @@ CREATE TABLE public.usuario (
 ALTER TABLE public.usuario OWNER TO postgres;
 
 --
--- TOC entry 229 (class 1259 OID 18078)
+-- TOC entry 227 (class 1259 OID 18078)
 -- Name: usuario_id_usuario_seq; Type: SEQUENCE; Schema: public; Owner: postgres
 --
 
@@ -501,8 +456,8 @@ CREATE SEQUENCE public.usuario_id_usuario_seq
 ALTER SEQUENCE public.usuario_id_usuario_seq OWNER TO postgres;
 
 --
--- TOC entry 5183 (class 0 OID 0)
--- Dependencies: 229
+-- TOC entry 5164 (class 0 OID 0)
+-- Dependencies: 227
 -- Name: usuario_id_usuario_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
 
@@ -510,7 +465,7 @@ ALTER SEQUENCE public.usuario_id_usuario_seq OWNED BY public.usuario.id_usuario;
 
 
 --
--- TOC entry 238 (class 1259 OID 18367)
+-- TOC entry 236 (class 1259 OID 18367)
 -- Name: venta; Type: TABLE; Schema: public; Owner: postgres
 --
 
@@ -527,24 +482,7 @@ CREATE TABLE public.venta (
 ALTER TABLE public.venta OWNER TO postgres;
 
 --
--- TOC entry 244 (class 1259 OID 18448)
--- Name: venta_backup_20260923; Type: TABLE; Schema: public; Owner: postgres
---
-
-CREATE TABLE public.venta_backup_20260923 (
-    id_venta bigint,
-    id_vendedor bigint,
-    id_cliente bigint,
-    fecha timestamp without time zone,
-    total numeric(12,2),
-    estado character varying(30)
-);
-
-
-ALTER TABLE public.venta_backup_20260923 OWNER TO postgres;
-
---
--- TOC entry 237 (class 1259 OID 18366)
+-- TOC entry 235 (class 1259 OID 18366)
 -- Name: venta_id_venta_seq; Type: SEQUENCE; Schema: public; Owner: postgres
 --
 
@@ -559,8 +497,8 @@ CREATE SEQUENCE public.venta_id_venta_seq
 ALTER SEQUENCE public.venta_id_venta_seq OWNER TO postgres;
 
 --
--- TOC entry 5184 (class 0 OID 0)
--- Dependencies: 237
+-- TOC entry 5165 (class 0 OID 0)
+-- Dependencies: 235
 -- Name: venta_id_venta_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
 
@@ -568,7 +506,7 @@ ALTER SEQUENCE public.venta_id_venta_seq OWNED BY public.venta.id_venta;
 
 
 --
--- TOC entry 4937 (class 2604 OID 18354)
+-- TOC entry 4923 (class 2604 OID 18354)
 -- Name: articulo id_articulo; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
@@ -576,7 +514,7 @@ ALTER TABLE ONLY public.articulo ALTER COLUMN id_articulo SET DEFAULT nextval('p
 
 
 --
--- TOC entry 4933 (class 2604 OID 18177)
+-- TOC entry 4919 (class 2604 OID 18177)
 -- Name: asignacion id_asignacion; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
@@ -584,7 +522,7 @@ ALTER TABLE ONLY public.asignacion ALTER COLUMN id_asignacion SET DEFAULT nextva
 
 
 --
--- TOC entry 4923 (class 2604 OID 17998)
+-- TOC entry 4911 (class 2604 OID 17998)
 -- Name: cliente id_cliente; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
@@ -592,7 +530,7 @@ ALTER TABLE ONLY public.cliente ALTER COLUMN id_cliente SET DEFAULT nextval('pub
 
 
 --
--- TOC entry 4944 (class 2604 OID 18394)
+-- TOC entry 4930 (class 2604 OID 18394)
 -- Name: detalle_venta id_detalle; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
@@ -600,7 +538,7 @@ ALTER TABLE ONLY public.detalle_venta ALTER COLUMN id_detalle SET DEFAULT nextva
 
 
 --
--- TOC entry 4924 (class 2604 OID 18011)
+-- TOC entry 4912 (class 2604 OID 18011)
 -- Name: producto id_producto; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
@@ -608,7 +546,7 @@ ALTER TABLE ONLY public.producto ALTER COLUMN id_producto SET DEFAULT nextval('p
 
 
 --
--- TOC entry 4928 (class 2604 OID 18238)
+-- TOC entry 4916 (class 2604 OID 18238)
 -- Name: rol id_rol; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
@@ -616,7 +554,7 @@ ALTER TABLE ONLY public.rol ALTER COLUMN id_rol SET DEFAULT nextval('public.rol_
 
 
 --
--- TOC entry 4935 (class 2604 OID 18251)
+-- TOC entry 4921 (class 2604 OID 18251)
 -- Name: seguimiento id_seguimiento; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
@@ -624,15 +562,7 @@ ALTER TABLE ONLY public.seguimiento ALTER COLUMN id_seguimiento SET DEFAULT next
 
 
 --
--- TOC entry 4929 (class 2604 OID 18285)
--- Name: servicio_autorizado id_servicio; Type: DEFAULT; Schema: public; Owner: postgres
---
-
-ALTER TABLE ONLY public.servicio_autorizado ALTER COLUMN id_servicio SET DEFAULT nextval('public.servicio_autorizado_id_servicio_seq'::regclass);
-
-
---
--- TOC entry 4925 (class 2604 OID 18025)
+-- TOC entry 4913 (class 2604 OID 18025)
 -- Name: solicitud id_solicitud; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
@@ -640,7 +570,7 @@ ALTER TABLE ONLY public.solicitud ALTER COLUMN id_solicitud SET DEFAULT nextval(
 
 
 --
--- TOC entry 4931 (class 2604 OID 18309)
+-- TOC entry 4917 (class 2604 OID 18309)
 -- Name: usuario id_usuario; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
@@ -648,7 +578,7 @@ ALTER TABLE ONLY public.usuario ALTER COLUMN id_usuario SET DEFAULT nextval('pub
 
 
 --
--- TOC entry 4940 (class 2604 OID 18370)
+-- TOC entry 4926 (class 2604 OID 18370)
 -- Name: venta id_venta; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
@@ -656,97 +586,62 @@ ALTER TABLE ONLY public.venta ALTER COLUMN id_venta SET DEFAULT nextval('public.
 
 
 --
--- TOC entry 5159 (class 0 OID 18351)
--- Dependencies: 236
+-- TOC entry 5142 (class 0 OID 18351)
+-- Dependencies: 234
 -- Data for Name: articulo; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
 COPY public.articulo (id_articulo, nombre, descripcion, categoria, precio, stock, estado) FROM stdin;
-1	Heladera	Smart Fridge	Samsung	2750000.00	28	ACTIVO
+1	Heladera	Smart Fridge	Samsung	2750000.00	27	ACTIVO
 \.
 
 
 --
--- TOC entry 5155 (class 0 OID 18127)
--- Dependencies: 232
+-- TOC entry 5138 (class 0 OID 18127)
+-- Dependencies: 230
 -- Data for Name: asignacion; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
 COPY public.asignacion (id_asignacion, id_solicitud, id_usuario, fecha_asignacion) FROM stdin;
+5	11	3	2026-09-24 05:50:04.154817
 \.
 
 
 --
--- TOC entry 5143 (class 0 OID 17946)
+-- TOC entry 5128 (class 0 OID 17946)
 -- Dependencies: 220
 -- Data for Name: cliente; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
 COPY public.cliente (id_cliente, nombre, documento, telefono, correo) FROM stdin;
-7	Luis Villalba	2789012	+595984456789	\N
-1	Cliente de Prueba	1234567	0981222333	prueba@test.com
-2	Claudio Jara	5099215	0991979584	claudiojara@gmail.com
-4	Soto	5888111	0982400900	soto@gmail.com
-5	María Gómez	4123456	+595981123456	maria.gomez@example.com
-6	Sofía Ramírez	6234567	+595985567890	sofia.ramirez@example.com
-8	Carlos Benítez	3567890	+595982234567	carlos.benitez@example.com
-9	Ana Duarte	5012345	0983345678	ana.duarte@example.com
-10	Luis Soto	4111222	0994856271	soto@gmail.com
-16	Luis Soto	1113246	0994777222	soto@gmail.com
+1	Diego Rojas	5823232	0981222333	diego.rojas@example.com
+2	María Medina	2822789	0991979584	maria.medina@example.com
+4	Verónica Ayala	4406101	0982400900	veronica.ayala@example.com
+5	Luis Vera	5754061	+595981123456	luis.vera@example.com
+6	Juan Giménez	3299431	+595985567890	juan.gimenez@example.com
+7	Gabriela Giménez	1153499	+595984456789	\N
+8	Laura Ayala	5298668	+595982234567	laura.ayala@example.com
+9	Carolina Báez	2567340	0983345678	carolina.baez@example.com
+10	Juan Villalba	3916205	0994856271	juan.villalba@example.com
+16	Natalia Villalba	4756146	0994777222	natalia.villalba@example.com
+18	Miguel Arévalo	4027619	0994999555	miguel.arevalo@example.com
 \.
 
 
 --
--- TOC entry 5166 (class 0 OID 18443)
--- Dependencies: 243
--- Data for Name: cliente_backup_20260923; Type: TABLE DATA; Schema: public; Owner: postgres
---
-
-COPY public.cliente_backup_20260923 (id_cliente, nombre, documento, telefono, correo) FROM stdin;
-1	Cliente de Prueba	1234567	0981222333	prueba@test.com
-2	Claudio Jara	5099215	0991979584	claudiojara@gmail.com
-3	Prueba Prueba	1234567	0991789123	asdfg@gmail.com
-4	Soto	5888111	0982400900	soto@gmail.com
-5	María Gómez	4123456	+595981123456	maria.gomez@example.com
-6	Sofía Ramírez	6234567	+595985567890	sofia.ramirez@example.com
-7	Luis Villalba	2789012	+595984456789	\N
-8	Carlos Benítez	3567890	+595982234567	carlos.benitez@example.com
-9	Ana Duarte	5012345	0983345678	ana.duarte@example.com
-10	Luis Soto	4111222	0994856271	soto@gmail.com
-11	Carlos Portal	48700	0991932726	portal@gmail.com
-12	Juan Perez	6000111	0962728645	juan@gmail.com
-13	Prueba	2500000	0991111111	prueba@gmail.com
-14	Enrique Paez	4567894	09984518161	enriquee@enrique.com
-15	Nacho	6056325	45674891	nacho@gmail.com
-16	Luis Soto	1113246	0994777222	soto@gmail.com
-\.
-
-
---
--- TOC entry 5163 (class 0 OID 18391)
--- Dependencies: 240
+-- TOC entry 5146 (class 0 OID 18391)
+-- Dependencies: 238
 -- Data for Name: detalle_venta; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
 COPY public.detalle_venta (id_detalle, id_venta, id_articulo, cantidad, precio_unitario, subtotal) FROM stdin;
+3	3	1	1	2750000.00	2750000.00
 \.
 
 
 --
--- TOC entry 5168 (class 0 OID 18451)
--- Dependencies: 245
--- Data for Name: detalle_venta_backup_20260923; Type: TABLE DATA; Schema: public; Owner: postgres
---
-
-COPY public.detalle_venta_backup_20260923 (id_detalle, id_venta, id_articulo, cantidad, precio_unitario, subtotal) FROM stdin;
-1	1	1	1	2750000.00	2750000.00
-2	2	1	1	2750000.00	2750000.00
-\.
-
-
---
--- TOC entry 5165 (class 0 OID 18422)
--- Dependencies: 242
+-- TOC entry 5148 (class 0 OID 18455)
+-- Dependencies: 240
 -- Data for Name: garantia; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
@@ -755,7 +650,7 @@ COPY public.garantia (id_garantia, estado, fecha_fin, fecha_inicio, id_cliente, 
 
 
 --
--- TOC entry 5145 (class 0 OID 17959)
+-- TOC entry 5130 (class 0 OID 17959)
 -- Dependencies: 222
 -- Data for Name: producto; Type: TABLE DATA; Schema: public; Owner: postgres
 --
@@ -848,6 +743,7 @@ COPY public.producto (id_producto, marca, modelo, nro_serie, tipo_producto, id_c
 61	HP	Pavilion 15	SN-NB-0003	Notebook	2	2026-06-14
 87	Tokyo	Ventilador de techo	SN-VE-0002	Ventilador	8	2025-04-18
 2	Tokyo	qwes	2	Televisor	1	2026-07-07
+91	Samsung	Smart Fridge	VTA-3-1-1	Heladera	18	2026-09-23
 35	Samsung	WindFree 12000 BTU	SN-AA-0006	Aire acondicionado	6	2026-02-16
 63	Acer	Aspire 5 A515	SN-NB-0005	Notebook	4	2026-04-01
 88	Philips	Plancha a vapor 2400W	SN-PL-0001	Plancha	9	2026-09-03
@@ -855,7 +751,7 @@ COPY public.producto (id_producto, marca, modelo, nro_serie, tipo_producto, id_c
 
 
 --
--- TOC entry 5149 (class 0 OID 18060)
+-- TOC entry 5134 (class 0 OID 18060)
 -- Dependencies: 226
 -- Data for Name: rol; Type: TABLE DATA; Schema: public; Owner: postgres
 --
@@ -869,74 +765,65 @@ COPY public.rol (id_rol, nombre, descripcion) FROM stdin;
 
 
 --
--- TOC entry 5157 (class 0 OID 18148)
--- Dependencies: 234
+-- TOC entry 5140 (class 0 OID 18148)
+-- Dependencies: 232
 -- Data for Name: seguimiento; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.seguimiento (id_seguimiento, id_solicitud, id_usuario, fecha, estado, diagnostico, observacion) FROM stdin;
+COPY public.seguimiento (id_seguimiento, id_solicitud, id_usuario, fecha, estado, diagnostico) FROM stdin;
+8	11	3	2026-09-24 05:50:48.936808	EN DIAGNÓSTICO	Motor quemado
 \.
 
 
 --
--- TOC entry 5151 (class 0 OID 18069)
--- Dependencies: 228
+-- TOC entry 5150 (class 0 OID 18467)
+-- Dependencies: 242
 -- Data for Name: servicio_autorizado; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.servicio_autorizado (id_servicio, nombre, ciudad, estado) FROM stdin;
+COPY public.servicio_autorizado (id_servicio, ciudad, estado, nombre) FROM stdin;
 \.
 
 
 --
--- TOC entry 5147 (class 0 OID 17973)
+-- TOC entry 5132 (class 0 OID 17973)
 -- Dependencies: 224
 -- Data for Name: solicitud; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
 COPY public.solicitud (id_solicitud, id_cliente, id_producto, fecha, descripcion, estado_actual) FROM stdin;
+11	5	44	2026-09-24 05:50:00.40739	No centrifuga	EN DIAGNÓSTICO
 \.
 
 
 --
--- TOC entry 5153 (class 0 OID 18079)
--- Dependencies: 230
+-- TOC entry 5136 (class 0 OID 18079)
+-- Dependencies: 228
 -- Data for Name: usuario; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.usuario (id_usuario, id_rol, id_servicio, nombre, correo, clave, estado) FROM stdin;
-1	1	\N	Administrador Prueba	admin@ngosaeca.com.py	$2b$10$6AQbd.y2DZqc9SpI.IlTgeKMZsTMrvATD0UXfl46wVDiiIgiKRCWC	ACTIVO
-3	3	\N	Tecnico Prueba	tecnico@ngosaeca.com.py	$2b$10$DYIXKUvFECLaJ5nbV9c4Fu1Gj3IVmEpqyzEfQlvGuZjW1O5OrD9oS	ACTIVO
-4	4	\N	Vendedor Prueba	vendedor@ngosaeca.com.py	$2a$10$DkGiCCqdHz4M/QKT8a8NyepZBf1ocmaqM6DRXRzt0NtKCL/X0xw7G	ACTIVO
-2	2	\N	Atencion Prueba	atencion@ngosaeca.com.py	$2b$10$VQ7b.UWEvdcGTnZ9AhnjeOKCZFsLuzKAYHrLmW5WoByP.JeSxIqKq	ACTIVO
+COPY public.usuario (id_usuario, id_rol, nombre, correo, clave, estado) FROM stdin;
+1	1	Administrador Prueba	admin@ngosaeca.com.py	$2b$10$6AQbd.y2DZqc9SpI.IlTgeKMZsTMrvATD0UXfl46wVDiiIgiKRCWC	ACTIVO
+3	3	Tecnico Prueba	tecnico@ngosaeca.com.py	$2b$10$DYIXKUvFECLaJ5nbV9c4Fu1Gj3IVmEpqyzEfQlvGuZjW1O5OrD9oS	ACTIVO
+4	4	Vendedor Prueba	vendedor@ngosaeca.com.py	$2a$10$DkGiCCqdHz4M/QKT8a8NyepZBf1ocmaqM6DRXRzt0NtKCL/X0xw7G	ACTIVO
+2	2	Atencion Prueba	atencion@ngosaeca.com.py	$2b$10$VQ7b.UWEvdcGTnZ9AhnjeOKCZFsLuzKAYHrLmW5WoByP.JeSxIqKq	ACTIVO
 \.
 
 
 --
--- TOC entry 5161 (class 0 OID 18367)
--- Dependencies: 238
+-- TOC entry 5144 (class 0 OID 18367)
+-- Dependencies: 236
 -- Data for Name: venta; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
 COPY public.venta (id_venta, id_vendedor, id_cliente, fecha, total, estado) FROM stdin;
+3	1	18	2026-09-23 01:31:36.828519	2750000.00	COMPLETADA
 \.
 
 
 --
--- TOC entry 5167 (class 0 OID 18448)
--- Dependencies: 244
--- Data for Name: venta_backup_20260923; Type: TABLE DATA; Schema: public; Owner: postgres
---
-
-COPY public.venta_backup_20260923 (id_venta, id_vendedor, id_cliente, fecha, total, estado) FROM stdin;
-1	4	\N	2026-09-22 23:20:17.762338	2750000.00	COMPLETADA
-2	4	16	2026-09-23 00:12:35.859963	2750000.00	COMPLETADA
-\.
-
-
---
--- TOC entry 5185 (class 0 OID 0)
--- Dependencies: 235
+-- TOC entry 5166 (class 0 OID 0)
+-- Dependencies: 233
 -- Name: articulo_id_articulo_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
@@ -944,35 +831,35 @@ SELECT pg_catalog.setval('public.articulo_id_articulo_seq', 1, true);
 
 
 --
--- TOC entry 5186 (class 0 OID 0)
--- Dependencies: 231
+-- TOC entry 5167 (class 0 OID 0)
+-- Dependencies: 229
 -- Name: asignacion_id_asignacion_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.asignacion_id_asignacion_seq', 4, true);
+SELECT pg_catalog.setval('public.asignacion_id_asignacion_seq', 5, true);
 
 
 --
--- TOC entry 5187 (class 0 OID 0)
+-- TOC entry 5168 (class 0 OID 0)
 -- Dependencies: 219
 -- Name: cliente_id_cliente_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.cliente_id_cliente_seq', 16, true);
+SELECT pg_catalog.setval('public.cliente_id_cliente_seq', 18, true);
 
 
 --
--- TOC entry 5188 (class 0 OID 0)
--- Dependencies: 239
+-- TOC entry 5169 (class 0 OID 0)
+-- Dependencies: 237
 -- Name: detalle_venta_id_detalle_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.detalle_venta_id_detalle_seq', 2, true);
+SELECT pg_catalog.setval('public.detalle_venta_id_detalle_seq', 3, true);
 
 
 --
--- TOC entry 5189 (class 0 OID 0)
--- Dependencies: 241
+-- TOC entry 5170 (class 0 OID 0)
+-- Dependencies: 239
 -- Name: garantia_id_garantia_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
@@ -980,16 +867,16 @@ SELECT pg_catalog.setval('public.garantia_id_garantia_seq', 1, false);
 
 
 --
--- TOC entry 5190 (class 0 OID 0)
+-- TOC entry 5171 (class 0 OID 0)
 -- Dependencies: 221
 -- Name: producto_id_producto_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.producto_id_producto_seq', 90, true);
+SELECT pg_catalog.setval('public.producto_id_producto_seq', 91, true);
 
 
 --
--- TOC entry 5191 (class 0 OID 0)
+-- TOC entry 5172 (class 0 OID 0)
 -- Dependencies: 225
 -- Name: rol_id_rol_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
@@ -998,17 +885,17 @@ SELECT pg_catalog.setval('public.rol_id_rol_seq', 4, true);
 
 
 --
--- TOC entry 5192 (class 0 OID 0)
--- Dependencies: 233
+-- TOC entry 5173 (class 0 OID 0)
+-- Dependencies: 231
 -- Name: seguimiento_id_seguimiento_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.seguimiento_id_seguimiento_seq', 7, true);
+SELECT pg_catalog.setval('public.seguimiento_id_seguimiento_seq', 8, true);
 
 
 --
--- TOC entry 5193 (class 0 OID 0)
--- Dependencies: 227
+-- TOC entry 5174 (class 0 OID 0)
+-- Dependencies: 241
 -- Name: servicio_autorizado_id_servicio_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
@@ -1016,17 +903,17 @@ SELECT pg_catalog.setval('public.servicio_autorizado_id_servicio_seq', 1, false)
 
 
 --
--- TOC entry 5194 (class 0 OID 0)
+-- TOC entry 5175 (class 0 OID 0)
 -- Dependencies: 223
 -- Name: solicitud_id_solicitud_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.solicitud_id_solicitud_seq', 10, true);
+SELECT pg_catalog.setval('public.solicitud_id_solicitud_seq', 11, true);
 
 
 --
--- TOC entry 5195 (class 0 OID 0)
--- Dependencies: 229
+-- TOC entry 5176 (class 0 OID 0)
+-- Dependencies: 227
 -- Name: usuario_id_usuario_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
@@ -1034,16 +921,16 @@ SELECT pg_catalog.setval('public.usuario_id_usuario_seq', 4, true);
 
 
 --
--- TOC entry 5196 (class 0 OID 0)
--- Dependencies: 237
+-- TOC entry 5177 (class 0 OID 0)
+-- Dependencies: 235
 -- Name: venta_id_venta_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.venta_id_venta_seq', 2, true);
+SELECT pg_catalog.setval('public.venta_id_venta_seq', 3, true);
 
 
 --
--- TOC entry 4973 (class 2606 OID 18365)
+-- TOC entry 4957 (class 2606 OID 18365)
 -- Name: articulo articulo_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1052,7 +939,7 @@ ALTER TABLE ONLY public.articulo
 
 
 --
--- TOC entry 4969 (class 2606 OID 18179)
+-- TOC entry 4953 (class 2606 OID 18179)
 -- Name: asignacion asignacion_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1061,7 +948,7 @@ ALTER TABLE ONLY public.asignacion
 
 
 --
--- TOC entry 4951 (class 2606 OID 18447)
+-- TOC entry 4937 (class 2606 OID 18447)
 -- Name: cliente cliente_documento_unique; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1070,7 +957,7 @@ ALTER TABLE ONLY public.cliente
 
 
 --
--- TOC entry 4953 (class 2606 OID 18000)
+-- TOC entry 4939 (class 2606 OID 18000)
 -- Name: cliente cliente_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1079,7 +966,7 @@ ALTER TABLE ONLY public.cliente
 
 
 --
--- TOC entry 4977 (class 2606 OID 18403)
+-- TOC entry 4961 (class 2606 OID 18403)
 -- Name: detalle_venta detalle_venta_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1088,7 +975,7 @@ ALTER TABLE ONLY public.detalle_venta
 
 
 --
--- TOC entry 4979 (class 2606 OID 18432)
+-- TOC entry 4963 (class 2606 OID 18465)
 -- Name: garantia garantia_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1097,7 +984,7 @@ ALTER TABLE ONLY public.garantia
 
 
 --
--- TOC entry 4955 (class 2606 OID 17971)
+-- TOC entry 4941 (class 2606 OID 17971)
 -- Name: producto producto_nro_serie_key; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1106,7 +993,7 @@ ALTER TABLE ONLY public.producto
 
 
 --
--- TOC entry 4957 (class 2606 OID 18013)
+-- TOC entry 4943 (class 2606 OID 18013)
 -- Name: producto producto_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1115,7 +1002,7 @@ ALTER TABLE ONLY public.producto
 
 
 --
--- TOC entry 4961 (class 2606 OID 18240)
+-- TOC entry 4947 (class 2606 OID 18240)
 -- Name: rol rol_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1124,7 +1011,7 @@ ALTER TABLE ONLY public.rol
 
 
 --
--- TOC entry 4971 (class 2606 OID 18253)
+-- TOC entry 4955 (class 2606 OID 18253)
 -- Name: seguimiento seguimiento_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1133,7 +1020,7 @@ ALTER TABLE ONLY public.seguimiento
 
 
 --
--- TOC entry 4963 (class 2606 OID 18287)
+-- TOC entry 4965 (class 2606 OID 18473)
 -- Name: servicio_autorizado servicio_autorizado_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1142,7 +1029,7 @@ ALTER TABLE ONLY public.servicio_autorizado
 
 
 --
--- TOC entry 4959 (class 2606 OID 18027)
+-- TOC entry 4945 (class 2606 OID 18027)
 -- Name: solicitud solicitud_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1151,7 +1038,7 @@ ALTER TABLE ONLY public.solicitud
 
 
 --
--- TOC entry 4965 (class 2606 OID 18092)
+-- TOC entry 4949 (class 2606 OID 18092)
 -- Name: usuario usuario_correo_key; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1160,7 +1047,7 @@ ALTER TABLE ONLY public.usuario
 
 
 --
--- TOC entry 4967 (class 2606 OID 18311)
+-- TOC entry 4951 (class 2606 OID 18311)
 -- Name: usuario usuario_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1169,7 +1056,7 @@ ALTER TABLE ONLY public.usuario
 
 
 --
--- TOC entry 4975 (class 2606 OID 18379)
+-- TOC entry 4959 (class 2606 OID 18379)
 -- Name: venta venta_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1178,7 +1065,7 @@ ALTER TABLE ONLY public.venta
 
 
 --
--- TOC entry 4985 (class 2606 OID 18186)
+-- TOC entry 4970 (class 2606 OID 18186)
 -- Name: asignacion asignacion_id_solicitud_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1187,7 +1074,7 @@ ALTER TABLE ONLY public.asignacion
 
 
 --
--- TOC entry 4986 (class 2606 OID 18313)
+-- TOC entry 4971 (class 2606 OID 18313)
 -- Name: asignacion asignacion_id_usuario_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1196,7 +1083,7 @@ ALTER TABLE ONLY public.asignacion
 
 
 --
--- TOC entry 4991 (class 2606 OID 18409)
+-- TOC entry 4976 (class 2606 OID 18409)
 -- Name: detalle_venta detalle_venta_id_articulo_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1205,7 +1092,7 @@ ALTER TABLE ONLY public.detalle_venta
 
 
 --
--- TOC entry 4992 (class 2606 OID 18404)
+-- TOC entry 4977 (class 2606 OID 18404)
 -- Name: detalle_venta detalle_venta_id_venta_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1214,7 +1101,7 @@ ALTER TABLE ONLY public.detalle_venta
 
 
 --
--- TOC entry 4993 (class 2606 OID 18433)
+-- TOC entry 4978 (class 2606 OID 18474)
 -- Name: garantia fk2tjrqe490v7sesi45memj9ri7; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1223,7 +1110,7 @@ ALTER TABLE ONLY public.garantia
 
 
 --
--- TOC entry 4994 (class 2606 OID 18438)
+-- TOC entry 4979 (class 2606 OID 18479)
 -- Name: garantia fk3n5o0syq795od2ju4e2kcvjjv; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1232,7 +1119,7 @@ ALTER TABLE ONLY public.garantia
 
 
 --
--- TOC entry 4980 (class 2606 OID 18416)
+-- TOC entry 4966 (class 2606 OID 18416)
 -- Name: producto producto_id_cliente_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1241,7 +1128,7 @@ ALTER TABLE ONLY public.producto
 
 
 --
--- TOC entry 4987 (class 2606 OID 18262)
+-- TOC entry 4972 (class 2606 OID 18262)
 -- Name: seguimiento seguimiento_id_solicitud_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1250,7 +1137,7 @@ ALTER TABLE ONLY public.seguimiento
 
 
 --
--- TOC entry 4988 (class 2606 OID 18318)
+-- TOC entry 4973 (class 2606 OID 18318)
 -- Name: seguimiento seguimiento_id_usuario_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1259,7 +1146,7 @@ ALTER TABLE ONLY public.seguimiento
 
 
 --
--- TOC entry 4981 (class 2606 OID 18036)
+-- TOC entry 4967 (class 2606 OID 18036)
 -- Name: solicitud solicitud_id_cliente_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1268,7 +1155,7 @@ ALTER TABLE ONLY public.solicitud
 
 
 --
--- TOC entry 4982 (class 2606 OID 18048)
+-- TOC entry 4968 (class 2606 OID 18048)
 -- Name: solicitud solicitud_id_producto_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1277,7 +1164,7 @@ ALTER TABLE ONLY public.solicitud
 
 
 --
--- TOC entry 4983 (class 2606 OID 18329)
+-- TOC entry 4969 (class 2606 OID 18329)
 -- Name: usuario usuario_id_rol_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1286,16 +1173,7 @@ ALTER TABLE ONLY public.usuario
 
 
 --
--- TOC entry 4984 (class 2606 OID 18339)
--- Name: usuario usuario_id_servicio_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
---
-
-ALTER TABLE ONLY public.usuario
-    ADD CONSTRAINT usuario_id_servicio_fkey FOREIGN KEY (id_servicio) REFERENCES public.servicio_autorizado(id_servicio);
-
-
---
--- TOC entry 4989 (class 2606 OID 18385)
+-- TOC entry 4974 (class 2606 OID 18385)
 -- Name: venta venta_id_cliente_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1304,7 +1182,7 @@ ALTER TABLE ONLY public.venta
 
 
 --
--- TOC entry 4990 (class 2606 OID 18380)
+-- TOC entry 4975 (class 2606 OID 18380)
 -- Name: venta venta_id_vendedor_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1312,11 +1190,11 @@ ALTER TABLE ONLY public.venta
     ADD CONSTRAINT venta_id_vendedor_fkey FOREIGN KEY (id_vendedor) REFERENCES public.usuario(id_usuario);
 
 
--- Completed on 2026-09-23 01:26:19
+-- Completed on 2026-09-24 05:57:00
 
 --
 -- PostgreSQL database dump complete
 --
 
-\unrestrict xOGGA8ZSea3cTM6cT4jQ9GPLrVBz1Pl2RNbgWmKBzugznWpEd8iWJYHAHwoXNmY
+\unrestrict jl6t5O6vXlONZNr2R0jTsD03PxSVF6USwiKtSbYmbVZhwsDlO11Ko6YxinV7OwM
 
