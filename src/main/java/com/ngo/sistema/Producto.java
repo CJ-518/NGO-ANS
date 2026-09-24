@@ -1,6 +1,6 @@
 package com.ngo.sistema;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import java.time.LocalDate;
 
@@ -43,16 +43,16 @@ public class Producto {
     // Getters and Setters
     public Long getIdProducto() { return idProducto; }
     public void setIdProducto(Long idProducto) { this.idProducto = idProducto; }
-    
+
     public String getMarca() { return marca; }
     public void setMarca(String marca) { this.marca = marca; }
-    
+
     public String getModelo() { return modelo; }
     public void setModelo(String modelo) { this.modelo = modelo; }
-    
+
     public String getNroSerie() { return nroSerie; }
     public void setNroSerie(String nroSerie) { this.nroSerie = nroSerie; }
-    
+
     public String getTipoProducto() { return tipoProducto; }
     public void setTipoProducto(String tipoProducto) { this.tipoProducto = tipoProducto; }
 
@@ -65,13 +65,13 @@ public class Producto {
     // ---------- Garantía calculada (fecha de venta + 1 año) ----------
 
     @Transient
-    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
+    @JsonIgnore
     public LocalDate getFechaFinGarantia() {
         return fechaVenta == null ? null : fechaVenta.plusYears(1);
     }
 
     @Transient
-    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
+    @JsonIgnore
     public boolean isGarantiaVigente() {
         LocalDate fin = getFechaFinGarantia();
         return fin != null && !fin.isBefore(LocalDate.now());

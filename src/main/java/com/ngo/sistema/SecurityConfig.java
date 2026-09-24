@@ -44,7 +44,7 @@ public class SecurityConfig {
             .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
             .authorizeHttpRequests(auth -> auth
                 // Recursos públicos: página de login y estáticos que ella necesita
-                .requestMatchers("/login.html", "/login", "/style.css", "/logo.png").permitAll()
+                .requestMatchers("/login.html", "/login", "/style.css").permitAll()
 
                 // Sólo ADMINISTRADOR puede eliminar solicitudes o administrar usuarios/roles
                 .requestMatchers(HttpMethod.DELETE, "/api/solicitudes/**").hasRole("ADMINISTRADOR")
@@ -59,12 +59,11 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.POST, "/api/articulos").hasRole("ADMINISTRADOR")
                 .requestMatchers(HttpMethod.PUT, "/api/articulos/*/stock").hasRole("ADMINISTRADOR")
 
-                // TECNICO no puede dar de alta clientes/productos/solicitudes nuevas,
+                // TECNICO no puede dar de alta clientes/solicitudes nuevas,
                 // ni cambiar el estado de cualquier solicitud: eso queda para ADMINISTRADOR y ATENCION.
                 // (El TECNICO solo avanza las solicitudes que tiene asignadas: /diagnostico y /finalizar.)
                 // El VENDEDOR también puede registrar clientes: los carga desde el Portal de Ventas.
                 .requestMatchers(HttpMethod.POST, "/api/clientes").hasAnyRole("ADMINISTRADOR", "ATENCION", "VENDEDOR")
-                .requestMatchers(HttpMethod.POST, "/api/productos").hasAnyRole("ADMINISTRADOR", "ATENCION")
                 .requestMatchers(HttpMethod.POST, "/api/solicitudes").hasAnyRole("ADMINISTRADOR", "ATENCION")
                 .requestMatchers(HttpMethod.PUT, "/api/solicitudes/*/estado").hasAnyRole("ADMINISTRADOR", "ATENCION")
 

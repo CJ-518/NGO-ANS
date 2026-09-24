@@ -28,7 +28,7 @@ public class SeguimientoController {
 
     /** Una entrada del historial de la solicitud. */
     public record RegistroSeguimiento(Long idSeguimiento, LocalDateTime fecha, String estado,
-                                      String diagnostico, String observacion, String usuario) {}
+                                      String diagnostico, String usuario) {}
 
     @Autowired
     private SolicitudRepository solicitudRepo;
@@ -52,7 +52,6 @@ public class SeguimientoController {
                         s.getFecha(),
                         s.getEstado(),
                         s.getDiagnostico(),
-                        s.getObservacion(),
                         s.getUsuario() != null ? s.getUsuario().getNombre() : null))
                 .toList();
         return ResponseEntity.ok(registros);

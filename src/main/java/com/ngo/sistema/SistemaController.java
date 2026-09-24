@@ -1,12 +1,10 @@
 package com.ngo.sistema;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
-import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 
@@ -81,36 +79,6 @@ public class SistemaController {
         return productoRepo.findByClienteIdClienteOrderByFechaVentaDesc(id);
     }
 
-    // El sistema de "productos sin cliente" ya no está en uso: todo producto representa una
-    // venta concreta, así que exige el cliente que lo compró y la fecha de venta (por defecto,
-    // hoy). La garantía (venta + 1 año) se calcula sola a partir de esa fecha.
-    @PreAuthorize("hasAnyRole('ADMINISTRADOR', 'ATENCION')")
-    @PostMapping("/productos")
-    public ResponseEntity<?> crearProducto(@RequestBody Producto producto) {
-        if (producto.getCliente() == null || producto.getCliente().getIdCliente() == null) {
-            return error(HttpStatus.BAD_REQUEST,
-                    "El producto debe tener el cliente que lo compró: ya no se admiten productos sin cliente.");
-        }
-        Cliente cliente = clienteRepo.findById(producto.getCliente().getIdCliente()).orElse(null);
-        if (cliente == null) {
-            return error(HttpStatus.BAD_REQUEST, "El cliente indicado no existe.");
-        }
-        if (producto.getMarca() == null || producto.getMarca().isBlank()
-                || producto.getModelo() == null || producto.getModelo().isBlank()
-                || producto.getNroSerie() == null || producto.getNroSerie().isBlank()
-                || producto.getTipoProducto() == null || producto.getTipoProducto().isBlank()) {
-            return error(HttpStatus.BAD_REQUEST, "Marca, modelo, número de serie y tipo de producto son obligatorios.");
-        }
-        if (productoRepo.findByNroSerie(producto.getNroSerie().trim()).isPresent()) {
-            return error(HttpStatus.CONFLICT, "Ya existe un producto registrado con ese número de serie.");
-        }
-        if (producto.getFechaVenta() == null) {
-            producto.setFechaVenta(LocalDate.now());
-        }
-        producto.setCliente(cliente);
-        return ResponseEntity.status(HttpStatus.CREATED).body(productoRepo.save(producto));
-    }
-
     @GetMapping("/productos")
     public List<Producto> listarProductos() {
         return productoRepo.findAll();
@@ -179,9 +147,5 @@ public class SistemaController {
             solicitudRepo.save(solicitud);
         }
         return solicitud;
-    }
-
-    private static ResponseEntity<Map<String, String>> error(HttpStatus estado, String mensaje) {
-        return ResponseEntity.status(estado).body(Map.of("error", mensaje));
     }
 }
