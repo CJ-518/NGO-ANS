@@ -59,6 +59,7 @@ public class SecurityConfig {
                 .requestMatchers("/portal-ventas.html", "/portal-ventas.js").hasAnyRole("VENDEDOR", "ADMINISTRADOR")
                 .requestMatchers(HttpMethod.POST, "/api/ventas").hasAnyRole("VENDEDOR", "ADMINISTRADOR")
                 .requestMatchers(HttpMethod.GET, "/api/ventas").hasAnyRole("VENDEDOR", "ADMINISTRADOR")
+                .requestMatchers(HttpMethod.GET, "/api/ventas/*/factura").hasAnyRole("VENDEDOR", "ADMINISTRADOR")
                 // Alta de artículos y corrección de stock: solo ADMINISTRADOR
                 .requestMatchers(HttpMethod.POST, "/api/articulos").hasRole("ADMINISTRADOR")
                 .requestMatchers(HttpMethod.PUT, "/api/articulos/*/stock").hasRole("ADMINISTRADOR")

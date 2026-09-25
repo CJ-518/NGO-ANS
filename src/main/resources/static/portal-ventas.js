@@ -304,11 +304,14 @@ async function confirmarVenta() {
             return;
         }
 
+        const ventaCreada = await res.json();
+
         carrito.clear();
         pintarCarrito();
         limpiarFormularioCliente();
         mostrarMensaje('venta-mensaje', 'Venta registrada correctamente.', 'exito');
         await Promise.all([cargarArticulos(), cargarVentas()]);
+        await descargarFactura(ventaCreada.idVenta);
     } catch (error) {
         console.error('Error registrando la venta:', error);
         mostrarMensaje('venta-mensaje', 'Error de conexión al registrar la venta.', 'error');
@@ -328,12 +331,35 @@ async function cargarVentas() {
     }
 }
 
+// Descarga la factura simple en PDF de una venta ya registrada (se llama sola al
+// confirmar una venta nueva, y también desde el botón "Factura" del historial).
+async function descargarFactura(idVenta) {
+    try {
+        const res = await fetch(`/api/ventas/${idVenta}/factura`);
+        if (!res.ok) {
+            mostrarMensaje('venta-mensaje', 'La venta se registró, pero no se pudo generar la factura.', 'error');
+            return;
+        }
+        const blob = await res.blob();
+        const url = window.URL.createObjectURL(blob);
+        const enlace = document.createElement('a');
+        enlace.href = url;
+        enlace.download = `factura-${idVenta}.pdf`;
+        document.body.appendChild(enlace);
+        enlace.click();
+        enlace.remove();
+        window.URL.revokeObjectURL(url);
+    } catch (error) {
+        console.error('Error descargando la factura:', error);
+    }
+}
+
 function pintarVentas(ventas) {
     const tbody = document.getElementById('ventas-body');
     tbody.innerHTML = '';
 
     if (ventas.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="6" style="color: #a0aec0;">Todavía no hay ventas registradas.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="7" style="color: #a0aec0;">Todavía no hay ventas registradas.</td></tr>';
         return;
     }
 
@@ -350,6 +376,16 @@ function pintarVentas(ventas) {
                 td.textContent = valor;
                 fila.appendChild(td);
             });
+
+        const tdFactura = document.createElement('td');
+        const btnFactura = document.createElement('button');
+        btnFactura.type = 'button';
+        btnFactura.className = 'btn-primary';
+        btnFactura.style.cssText = 'background-color: #4a5568; padding: 6px 12px; font-size: 14px;';
+        btnFactura.textContent = 'Factura';
+        btnFactura.addEventListener('click', () => descargarFactura(venta.idVenta));
+        tdFactura.appendChild(btnFactura);
+        fila.appendChild(tdFactura);
 
         tbody.appendChild(fila);
     });

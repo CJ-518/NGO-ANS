@@ -1,13 +1,16 @@
 package com.ngo.sistema;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -44,6 +47,9 @@ public class VentaController {
 
     @Autowired
     private ProductoRepository productoRepo;
+
+    @Autowired
+    private FacturaService facturaService;
 
     // ---------- Catálogo / stock ----------
 
@@ -162,6 +168,37 @@ public class VentaController {
         }
 
         return ResponseEntity.status(HttpStatus.CREATED).body(venta);
+    }
+
+    // Descarga la factura simple en PDF de una venta ya registrada. El VENDEDOR solo puede
+    // descargar sus propias ventas (mismo criterio que listarVentas); el ADMINISTRADOR, todas.
+    @PreAuthorize("hasAnyRole('VENDEDOR', 'ADMINISTRADOR')")
+    @GetMapping("/ventas/{id}/factura")
+    public ResponseEntity<?> factura(@PathVariable Long id, @AuthenticationPrincipal UsuarioPrincipal principal) {
+        Venta venta = ventaRepo.findById(id).orElse(null);
+        if (venta == null) {
+            return error(HttpStatus.NOT_FOUND, "La venta no existe.");
+        }
+
+        Usuario usuario = principal.getUsuario();
+        boolean esAdmin = "ADMINISTRADOR".equals(usuario.getRol().getNombre());
+        boolean esPropia = venta.getVendedor() != null
+                && venta.getVendedor().getIdUsuario().equals(usuario.getIdUsuario());
+        if (!esAdmin && !esPropia) {
+            return error(HttpStatus.FORBIDDEN, "No tenés permiso para ver esta factura.");
+        }
+
+        byte[] pdf;
+        try {
+            pdf = facturaService.generar(venta);
+        } catch (IOException e) {
+            return error(HttpStatus.INTERNAL_SERVER_ERROR, "No se pudo generar la factura.");
+        }
+
+        return ResponseEntity.ok()
+                .contentType(MediaType.APPLICATION_PDF)
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"factura-" + venta.getIdVenta() + ".pdf\"")
+                .body(pdf);
     }
 
     // Genera un Producto por cada unidad vendida, con un N° de serie propio (no es el de
