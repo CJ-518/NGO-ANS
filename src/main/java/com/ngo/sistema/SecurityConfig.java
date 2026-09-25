@@ -46,6 +46,10 @@ public class SecurityConfig {
                 // Recursos públicos: página de login y estáticos que ella necesita
                 .requestMatchers("/login.html", "/login", "/style.css").permitAll()
 
+                // Seguimiento público de una solicitud (link sin usuario, para el cliente)
+                .requestMatchers("/seguimiento.html", "/seguimiento.js").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/publico/**").permitAll()
+
                 // Sólo ADMINISTRADOR puede eliminar solicitudes o administrar usuarios/roles
                 .requestMatchers(HttpMethod.DELETE, "/api/solicitudes/**").hasRole("ADMINISTRADOR")
                 .requestMatchers("/api/usuarios/**").hasRole("ADMINISTRADOR")

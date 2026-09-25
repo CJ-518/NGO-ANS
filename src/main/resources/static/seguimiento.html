@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NGO SAECA - Seguimiento de solicitud</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header>
+        <div class="logo">NGO SAECA</div>
+        <div class="user-role">Seguimiento de solicitud</div>
+    </header>
+
+    <main style="max-width: 800px; margin: 0 auto;">
+        <div id="seguimiento-cargando" class="form-section card" style="width: auto;">
+            <p>Buscando tu solicitud...</p>
+        </div>
+
+        <div id="seguimiento-error" class="form-section card" style="width: auto; display: none;">
+            <h2 style="margin-top: 0; color: #c53030;">No pudimos encontrar tu solicitud</h2>
+            <p id="seguimiento-error-mensaje" style="color: #4a5568;">
+                Revisá que el link esté completo, tal como te lo enviamos. Si el problema
+                continúa, comunicate con NGO SAECA.
+            </p>
+        </div>
+
+        <div id="seguimiento-contenido" class="form-section card" style="width: auto; display: none;">
+            <h2 id="detalle-titulo" style="margin-top: 0;">Solicitud</h2>
+
+            <p style="color: #4a5568;">Estado actual</p>
+            <h2 id="estado-actual" style="color: #2b6cb0; font-size: 28px; text-transform: uppercase; margin-top: 0;"></h2>
+            <p><strong>Última actualización:</strong> <span id="fecha-actualizacion"></span></p>
+
+            <!-- Línea de tiempo visual -->
+            <div class="timeline">
+                <div class="timeline-step">
+                    <div class="circle"></div>
+                    <p>Recibida</p>
+                </div>
+                <div class="timeline-line"></div>
+                <div class="timeline-step">
+                    <div class="circle"></div>
+                    <p>Asignada</p>
+                </div>
+                <div class="timeline-line"></div>
+                <div class="timeline-step">
+                    <div class="circle"></div>
+                    <p>Diagnóstico</p>
+                </div>
+                <div class="timeline-line"></div>
+                <div class="timeline-step">
+                    <div class="circle"></div>
+                    <p>Finalizada</p>
+                </div>
+            </div>
+
+            <h3>Detalles</h3>
+            <table>
+                <tbody>
+                    <tr>
+                        <td style="width: 200px; font-weight: bold;">Producto</td>
+                        <td id="detalle-producto"></td>
+                    </tr>
+                    <tr>
+                        <td style="font-weight: bold;">Problema reportado</td>
+                        <td id="detalle-descripcion"></td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>Seguimiento</h3>
+            <div id="detalle-seguimiento" style="color: #4a5568;"></div>
+        </div>
+    </main>
+
+    <script src="seguimiento.js"></script>
+</body>
+</html>

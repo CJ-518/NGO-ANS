@@ -34,6 +34,20 @@ public class Solicitud {
     @Column(name = "estado_actual", nullable = false, length = 30)
     private String estadoActual = "RECIBIDA";
 
+    // Código para que el cliente consulte el estado de su solicitud sin necesidad de una
+    // cuenta: se genera solo al crear la solicitud (no es el id secuencial, para que no se
+    // pueda adivinar el link de otro cliente probando números). Va en la URL pública
+    // /seguimiento.html?codigo=... y en el endpoint público /api/publico/seguimiento/{codigo}.
+    @Column(name = "codigo_publico", unique = true, length = 40, updatable = false)
+    private String codigoPublico;
+
+    @PrePersist
+    private void generarCodigoPublico() {
+        if (codigoPublico == null || codigoPublico.isBlank()) {
+            codigoPublico = java.util.UUID.randomUUID().toString().replace("-", "");
+        }
+    }
+
     // Al eliminar una solicitud se eliminan también sus asignaciones y su seguimiento
     // (las FK de la base de datos no tienen ON DELETE CASCADE). No se exponen en el JSON.
     @JsonIgnore
@@ -47,21 +61,23 @@ public class Solicitud {
     // Getters and Setters
     public Long getIdSolicitud() { return idSolicitud; }
     public void setIdSolicitud(Long idSolicitud) { this.idSolicitud = idSolicitud; }
-    
+
     public Cliente getCliente() { return cliente; }
     public void setCliente(Cliente cliente) { this.cliente = cliente; }
-    
+
     public Producto getProducto() { return producto; }
     public void setProducto(Producto producto) { this.producto = producto; }
 
     public LocalDateTime getFecha() { return fecha; }
     public void setFecha(LocalDateTime fecha) { this.fecha = fecha; }
-    
+
     public String getDescripcion() { return descripcion; }
     public void setDescripcion(String descripcion) { this.descripcion = descripcion; }
-    
+
     public String getEstadoActual() { return estadoActual; }
     public void setEstadoActual(String estadoActual) { this.estadoActual = estadoActual; }
+
+    public String getCodigoPublico() { return codigoPublico; }
 
     // Técnico asignado actualmente (la última asignación). Solo se lee: se envía al frontend
     // como "tecnicoAsignado": { idUsuario, nombre }, o null si todavía no tiene técnico.

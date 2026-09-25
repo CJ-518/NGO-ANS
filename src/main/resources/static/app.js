@@ -1,6 +1,7 @@
 let rolActual = null;
 let idUsuarioActual = null;
 let tecnicos = []; // técnicos activos, para el selector de asignación
+let codigoPublicoActual = null; // de la solicitud que está abierta en el modal de detalle
 
 async function cargarUsuarioActual() {
     try {
@@ -95,6 +96,9 @@ document.addEventListener('DOMContentLoaded', async () => {
             cerrarAvance();
         }
     });
+
+    // Copiar el link público de seguimiento (para pasárselo al cliente)
+    document.getElementById('btn-copiar-link').addEventListener('click', copiarLinkSeguimiento);
 
     // Ventana "Actualizar estado" del técnico
     document.getElementById('avance-cerrar').addEventListener('click', cerrarAvance);
@@ -308,6 +312,26 @@ function cerrarDetalle() {
     document.getElementById('modal-detalle').style.display = 'none';
 }
 
+// Arma el link público (sin login) para que el cliente vea el estado de su solicitud,
+// y lo copia al portapapeles.
+async function copiarLinkSeguimiento() {
+    if (!codigoPublicoActual) {
+        alert('Esta solicitud todavía no tiene un link de seguimiento.');
+        return;
+    }
+    const link = `${window.location.origin}/seguimiento.html?codigo=${codigoPublicoActual}`;
+    try {
+        await navigator.clipboard.writeText(link);
+        const boton = document.getElementById('btn-copiar-link');
+        const textoOriginal = boton.textContent;
+        boton.textContent = '¡Link copiado!';
+        setTimeout(() => { boton.textContent = textoOriginal; }, 2000);
+    } catch (error) {
+        console.error('Error copiando el link:', error);
+        prompt('Copiá el link para el cliente:', link);
+    }
+}
+
 async function abrirDetalle(id) {
     try {
         // Se consulta de nuevo para mostrar el estado más reciente
@@ -334,6 +358,7 @@ async function abrirDetalle(id) {
         document.getElementById('detalle-producto').textContent =
             `${solicitud.producto.marca} ${solicitud.producto.modelo} (SN: ${solicitud.producto.nroSerie})`;
         document.getElementById('detalle-descripcion').textContent = solicitud.descripcion;
+        codigoPublicoActual = solicitud.codigoPublico;
 
         // Línea de tiempo
         const modal = document.getElementById('modal-detalle');
