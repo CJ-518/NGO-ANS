@@ -15,6 +15,7 @@ El sistema cubre dos líneas de negocio: **servicio técnico y garantías** (sol
 | Persistencia | Spring Data JPA (Hibernate) |
 | Validación | Bean Validation (`@Pattern` en `Cliente`) |
 | Seguridad | Spring Security + BCrypt |
+| PDF | Apache PDFBox (factura simple de venta) |
 | Base de datos | PostgreSQL |
 | Frontend | HTML5, CSS3, JavaScript nativo (sin framework) |
 | Build | Maven Wrapper (`mvnw` / `mvnw.cmd`) |
@@ -79,6 +80,20 @@ La garantía **no se guarda en una tabla**: se calcula siempre a partir de `prod
 - Permite crear usuarios con rol `ATENCION`, `TECNICO` o `VENDEDOR`.
 - El correo debe ser único y la contraseña (mínimo 8 caracteres) se guarda cifrada.
 
+### 7. Factura de venta en PDF
+
+- Desde el Portal de Ventas, al registrar una venta se descarga automáticamente una factura simple en PDF (`GET /api/ventas/{id}/factura`), generada con Apache PDFBox por `FacturaService`.
+- No es un comprobante fiscal timbrado por la SET: es un recibo de referencia con los datos de la venta (cliente, vendedor, artículos, cantidades y total).
+- El `VENDEDOR` solo puede descargar la factura de sus propias ventas; el `ADMINISTRADOR` puede descargar cualquiera.
+- Las fuentes estándar (Helvetica) no soportan tildes/ñ, así que el texto se guarda sin diacríticos dentro del PDF.
+
+### 8. Seguimiento público de una solicitud
+
+- Cada solicitud tiene un `codigoPublico` (UUID) generado automáticamente al crearse.
+- Desde el detalle de una solicitud (`ADMINISTRADOR` o `ATENCION`), el botón **Copiar link de seguimiento** arma la URL `seguimiento.html?codigo=...` y la copia al portapapeles, para pasársela al cliente.
+- `seguimiento.html` es una página pública (sin usuario ni contraseña) que consulta `GET /api/publico/seguimiento/{codigo}` y muestra el estado actual de la solicitud con una línea de tiempo y el historial de diagnósticos.
+- Se usa el código aleatorio (no el id secuencial) para que no se pueda adivinar el link de otro cliente probando números, y la respuesta no expone datos del cliente ni el nombre de quién atendió cada paso.
+
 ---
 
 ## Flujo de estados de una solicitud
@@ -98,7 +113,7 @@ La garantía **no se guarda en una tabla**: se calcula siempre a partir de `prod
 | ----- | --------- |
 | `cliente` | Nombre, documento (único, solo números), teléfono y correo |
 | `producto` | Equipo vendido: marca, modelo, N° de serie (único), tipo, cliente dueño y fecha de venta |
-| `solicitud` | Solicitud de servicio: cliente, producto, descripción y estado actual |
+| `solicitud` | Solicitud de servicio: cliente, producto, descripción, estado actual y `codigo_publico` (UUID único para el link de seguimiento) |
 | `asignacion` | Historial de técnicos asignados a cada solicitud (la última es la vigente) |
 | `seguimiento` | Registros de diagnóstico y cierre de cada solicitud |
 | `usuario` / `rol` | Usuarios del sistema y sus roles |
@@ -127,8 +142,10 @@ NGO-ANS/
 │   │   │   ├── ClienteRepository.java
 │   │   │   ├── CustomUserDetailsService.java
 │   │   │   ├── DetalleVenta.java
+│   │   │   ├── FacturaService.java
 │   │   │   ├── Producto.java
 │   │   │   ├── ProductoRepository.java
+│   │   │   ├── PublicoController.java
 │   │   │   ├── Rol.java
 │   │   │   ├── RolRepository.java
 │   │   │   ├── SecurityConfig.java
@@ -156,6 +173,8 @@ NGO-ANS/
 │   │           ├── nueva-solicitud.js
 │   │           ├── portal-ventas.html
 │   │           ├── portal-ventas.js
+│   │           ├── seguimiento.html
+│   │           ├── seguimiento.js
 │   │           ├── sesion.js
 │   │           ├── style.css
 │   │           ├── usuarios.html
@@ -244,7 +263,7 @@ WHERE correo = 'admin@ngosaeca.com.py';
 
 ## API REST
 
-Todas las rutas requieren sesión iniciada, salvo `/login.html`, `/login` y `/style.css`.
+Todas las rutas requieren sesión iniciada, salvo `/login.html`, `/login`, `/style.css`, `/seguimiento.html`, `/seguimiento.js` y `GET /api/publico/**`.
 
 | Método | Ruta | Descripción | Acceso |
 | ------ | ---- | ----------- | ------ |
@@ -274,6 +293,8 @@ Todas las rutas requieren sesión iniciada, salvo `/login.html`, `/login` y `/st
 | `PUT` | `/api/articulos/{id}/stock` | Ajusta el stock de un artículo | `ADMINISTRADOR` |
 | `GET` | `/api/ventas` | Ventas (todas para el administrador, solo las propias para el vendedor) | `VENDEDOR`, `ADMINISTRADOR` |
 | `POST` | `/api/ventas` | Registra una venta y descuenta stock | `VENDEDOR`, `ADMINISTRADOR` |
+| `GET` | `/api/ventas/{id}/factura` | Descarga la factura simple en PDF de la venta | `VENDEDOR` (propia), `ADMINISTRADOR` (cualquiera) |
+| `GET` | `/api/publico/seguimiento/{codigo}` | Estado y seguimiento de una solicitud por su `codigoPublico`, sin datos del cliente | público (sin login) |
 
 Autenticación de Spring Security: `POST /login` y `POST /logout`.
 
