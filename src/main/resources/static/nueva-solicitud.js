@@ -1,7 +1,7 @@
 let clientes = [];               // Todos los clientes registrados (para sugerir documentos)
 let clienteEncontrado = null;    // Cliente existente que coincide con el documento escrito (o null si es nuevo)
 let productosCliente = [];       // Productos que ya le vendimos a ese cliente
-let facturasCliente = [];        // Facturas (ventas) de ese cliente, para abrirlas al elegir un producto
+let facturasProducto = new Map(); // idProducto -> factura de la compra de ese producto (o null si no se encontró)
 let garantias = new Map();       // idProducto -> garantía (respuesta de /api/productos/{id}/garantia)
 let productoSeleccionado = null; // Producto elegido en el menú desplegable
 let indiceActivoDocumento = -1;  // Opción resaltada con el teclado en la lista de sugerencias de documento
@@ -148,7 +148,7 @@ async function buscarCliente() {
 
     clienteEncontrado = null;
     productosCliente = [];
-    facturasCliente = [];
+    facturasProducto = new Map();
     garantias = new Map();
     pintarProductos('Primero ingresá el documento del cliente');
     mostrarEstadoCliente(null);
@@ -215,16 +215,6 @@ async function cargarProductosDelCliente(idCliente, busqueda) {
         return;
     }
 
-    // Las facturas del cliente se piden aparte: si fallan, igual se puede registrar la solicitud
-    let facturas = [];
-    try {
-        const res = await fetch(`/api/clientes/${idCliente}/facturas`);
-        if (!res.ok) throw new Error('HTTP ' + res.status);
-        facturas = await res.json();
-    } catch (error) {
-        console.error('Error cargando las facturas del cliente:', error);
-    }
-
     // La garantía de cada producto se pide al servidor (fuente única del cálculo), en paralelo
     const pares = await Promise.all(lista.map(async (p) => {
         try {
@@ -239,7 +229,7 @@ async function cargarProductosDelCliente(idCliente, busqueda) {
     if (busqueda !== busquedaActual) return; // el usuario ya cambió de cliente
 
     productosCliente = lista;
-    facturasCliente = facturas;
+    facturasProducto = new Map();
     garantias = new Map(pares);
     pintarProductos();
 
@@ -309,73 +299,95 @@ function mostrarProducto(producto) {
 
     caja.style.display = 'block';
     dibujarGarantia(caja, garantias.get(producto.idProducto));
-    caja.appendChild(dibujarFacturas(producto));
+
+    // La factura se pide aparte y se agrega cuando llega (solo la del producto elegido)
+    const contenedor = crearContenedorFactura();
+    caja.appendChild(contenedor);
+    cargarFactura(producto, contenedor);
 }
 
-// ---------- Facturas del cliente ----------
+// ---------- Factura del producto elegido ----------
 //
-// Al elegir un producto se listan las facturas del cliente, cada una con un enlace que abre el PDF
-// en una pestaña nueva. Los productos que salieron de una venta del sistema tienen un N° de serie
-// "VTA-{venta}-{artículo}-{n}": con eso se marca la factura de la compra de ese producto y se
-// muestra primera. Los productos cargados de otra forma no tienen esa marca y solo se listan.
-function idVentaDelProducto(producto) {
-    const coincidencia = /^VTA-(\d+)-/.exec(producto.nroSerie || '');
-    return coincidencia ? Number(coincidencia[1]) : null;
-}
-
-function dibujarFacturas(producto) {
+// ---------- Factura del producto elegido ----------
+//
+// Al elegir un producto se muestra únicamente la factura de SU compra, con un enlace que abre el PDF
+// en una pestaña nueva. El servidor la obtiene de la venta asociada al producto (GET /api/productos/{id}/factura,
+// relación producto.id_venta). Si el producto no tiene venta, se avisa en vez de listar otras facturas.
+function crearContenedorFactura() {
     const contenedor = document.createElement('div');
     contenedor.style.cssText = 'margin-top: 15px; padding-top: 12px; border-top: 1px solid #cbd5e0;';
 
     const titulo = document.createElement('strong');
-    titulo.textContent = 'Facturas del cliente';
+    titulo.textContent = 'Factura del producto';
     contenedor.appendChild(titulo);
+    return contenedor;
+}
 
-    if (facturasCliente.length === 0) {
-        const vacio = linea('Este cliente no tiene facturas registradas en el sistema.');
-        vacio.style.cssText = 'margin-top: 6px; color: #4a5568;';
-        contenedor.appendChild(vacio);
-        return contenedor;
+async function cargarFactura(producto, contenedor) {
+    const id = producto.idProducto;
+
+    // Ya consultada antes: se reutiliza en vez de volver a pedirla
+    if (!facturasProducto.has(id)) {
+        contenedor.appendChild(mensajeFactura('Buscando la factura...'));
+        try {
+            const res = await fetch(`/api/productos/${id}/factura`);
+            if (res.status === 404) {
+                facturasProducto.set(id, null);
+            } else if (!res.ok) {
+                throw new Error('HTTP ' + res.status);
+            } else {
+                facturasProducto.set(id, await res.json());
+            }
+        } catch (error) {
+            console.error('Error cargando la factura del producto:', error);
+            if (productoSeleccionado === producto) {
+                contenedor.replaceChildren(contenedor.firstChild, mensajeFactura('No se pudo consultar la factura del producto.'));
+            }
+            return;
+        }
     }
 
-    const idCompra = idVentaDelProducto(producto);
-    const ordenadas = [...facturasCliente].sort((a, b) =>
-        (b.idVenta === idCompra) - (a.idVenta === idCompra));
+    // El usuario pudo haber elegido otro producto mientras llegaba la respuesta
+    if (productoSeleccionado !== producto || !contenedor.isConnected) return;
 
-    ordenadas.forEach((factura) => {
-        const fila = document.createElement('div');
-        fila.style.cssText = 'display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 8px 0; border-bottom: 1px solid #e2e8f0;';
+    const factura = facturasProducto.get(id);
+    if (!factura) {
+        contenedor.replaceChildren(contenedor.firstChild, mensajeFactura('No se encontró la factura de este producto en el sistema.'));
+        return;
+    }
+    contenedor.replaceChildren(contenedor.firstChild, dibujarFactura(factura));
+}
 
-        const datos = document.createElement('div');
-        const fecha = factura.fecha ? new Date(factura.fecha).toLocaleDateString('es-PY') : '';
-        const total = Number(factura.total).toLocaleString('es-PY');
-        datos.append(linea(`Factura ${factura.idVenta} · ${fecha} · Total ${total}`));
-        if (factura.detalle) {
-            const detalle = linea(factura.detalle);
-            detalle.style.cssText = 'font-size: 13px; color: #4a5568;';
-            datos.appendChild(detalle);
-        }
+function mensajeFactura(texto) {
+    const vacio = linea(texto);
+    vacio.style.cssText = 'margin-top: 6px; color: #4a5568;';
+    return vacio;
+}
 
-        if (factura.idVenta === idCompra) {
-            const insignia = document.createElement('span');
-            insignia.textContent = 'COMPRA DE ESTE PRODUCTO';
-            insignia.style.cssText = 'display: inline-block; margin-top: 4px; padding: 2px 8px; border-radius: 12px; font-weight: bold; font-size: 12px; background-color: #bee3f8; color: #2a4365;';
-            datos.appendChild(insignia);
-        }
+function dibujarFactura(factura) {
+    const fila = document.createElement('div');
+    fila.style.cssText = 'display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 8px 0;';
 
-        // Enlace normal (no fetch): el navegador abre el PDF con la sesión iniciada
-        const enlace = document.createElement('a');
-        enlace.href = `/api/ventas/${factura.idVenta}/factura?abrir=true`;
-        enlace.target = '_blank';
-        enlace.rel = 'noopener';
-        enlace.textContent = 'Abrir factura';
-        enlace.style.cssText = 'white-space: nowrap; color: #1a365d; font-weight: bold;';
+    const datos = document.createElement('div');
+    const fecha = factura.fecha ? new Date(factura.fecha).toLocaleDateString('es-PY') : '';
+    const total = Number(factura.total).toLocaleString('es-PY');
+    datos.append(linea(`Factura ${factura.idVenta} · ${fecha} · Total ${total}`));
+    if (factura.detalle) {
+        const detalle = linea(factura.detalle);
+        detalle.style.cssText = 'font-size: 13px; color: #4a5568;';
+        datos.appendChild(detalle);
+    }
 
-        fila.append(datos, enlace);
-        contenedor.appendChild(fila);
-    });
+    // Enlace normal (no fetch): el navegador abre el PDF con la sesión iniciada
+    const enlace = document.createElement('a');
+    enlace.href = `/api/ventas/${factura.idVenta}/factura?abrir=true`;
+    enlace.target = '_blank';
+    enlace.rel = 'noopener';
+    enlace.textContent = 'Abrir factura';
+    enlace.style.cssText = 'white-space: nowrap; color: #1a365d; font-weight: bold;';
 
-    return contenedor;
+    fila.append(datos, enlace);
+    return fila;
 }
 
 function dibujarGarantia(caja, garantia) {

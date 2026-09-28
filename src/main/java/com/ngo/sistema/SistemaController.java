@@ -79,11 +79,6 @@ public class SistemaController {
         return productoRepo.findByClienteIdClienteOrderByFechaVentaDesc(id);
     }
 
-    @GetMapping("/productos")
-    public List<Producto> listarProductos() {
-        return productoRepo.findAll();
-    }
-
     // La garantía ya no se guarda aparte: se calcula siempre a partir de la fecha de venta del
     // producto (venta + 1 año), así que nunca puede quedar desincronizada como pasaba antes.
     @GetMapping("/productos/{id}/garantia")

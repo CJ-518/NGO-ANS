@@ -22,8 +22,16 @@ public class Articulo {
     @Column(length = 255)
     private String descripcion;
 
+    // Tipo de producto (Heladera, Televisor, ...): es el tipo_producto de cada unidad vendida
     @Column(length = 50)
     private String categoria;
+
+    // Marca y modelo de fábrica: se copian a cada Producto (unidad con N° de serie) que sale de una venta
+    @Column(length = 50)
+    private String marca;
+
+    @Column(length = 50)
+    private String modelo;
 
     @Column(nullable = false, precision = 10, scale = 2)
     private BigDecimal precio;
@@ -46,6 +54,12 @@ public class Articulo {
 
     public String getCategoria() { return categoria; }
     public void setCategoria(String categoria) { this.categoria = categoria; }
+
+    public String getMarca() { return marca; }
+    public void setMarca(String marca) { this.marca = marca; }
+
+    public String getModelo() { return modelo; }
+    public void setModelo(String modelo) { this.modelo = modelo; }
 
     public BigDecimal getPrecio() { return precio; }
     public void setPrecio(BigDecimal precio) { this.precio = precio; }

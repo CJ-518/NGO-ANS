@@ -16,8 +16,9 @@ import java.util.Set;
 import java.util.regex.Pattern;
 
 /**
- * Administración de usuarios: solo ADMINISTRADOR puede listar usuarios y dar de alta
- * personal de Atención y técnicos. (SecurityConfig también protege /api/usuarios/**.)
+ * Administración de usuarios: solo ADMINISTRADOR puede listar usuarios, dar de alta
+ * personal de Atención, técnicos y vendedores, y cambiar la contraseña de cualquier usuario
+ * sin conocer la actual. (SecurityConfig también protege /api/usuarios/**.)
  */
 @RestController
 @RequestMapping("/api/usuarios")
@@ -33,6 +34,9 @@ public class UsuarioController {
 
     /** Datos que llegan desde el formulario (la clave nunca se devuelve). */
     public record NuevoUsuario(String nombre, String correo, String clave, String rol) {}
+
+    /** Cuerpo del cambio de contraseña: solo la contraseña nueva (no se pide la actual). */
+    public record CambioClave(String clave) {}
 
     /** Datos que se devuelven de un usuario: sin la clave ni su hash. */
     public record UsuarioResumen(Long idUsuario, String nombre, String correo, String rol, String estado) {}
@@ -66,12 +70,9 @@ public class UsuarioController {
         if (correo.length() > 100 || !CORREO.matcher(correo).matches()) {
             return error(HttpStatus.BAD_REQUEST, "El correo no es válido.");
         }
-        if (clave.length() < CLAVE_MIN_CARACTERES) {
-            return error(HttpStatus.BAD_REQUEST,
-                    "La contraseña debe tener al menos " + CLAVE_MIN_CARACTERES + " caracteres.");
-        }
-        if (clave.getBytes(StandardCharsets.UTF_8).length > CLAVE_MAX_BYTES) {
-            return error(HttpStatus.BAD_REQUEST, "La contraseña es demasiado larga.");
+        String errorClave = validarClave(clave);
+        if (errorClave != null) {
+            return error(HttpStatus.BAD_REQUEST, errorClave);
         }
         if (!ROLES_PERMITIDOS.contains(nombreRol)) {
             return error(HttpStatus.BAD_REQUEST, "El rol debe ser ATENCION, TECNICO o VENDEDOR.");
@@ -101,6 +102,45 @@ public class UsuarioController {
         }
 
         return ResponseEntity.status(HttpStatus.CREATED).body(resumir(usuario));
+    }
+
+    /**
+     * Restablece la contraseña de un usuario sin pedir la actual: es una acción del
+     * ADMINISTRADOR (por ejemplo, cuando un empleado la olvidó). Se aplican las mismas reglas
+     * que al crear un usuario y la nueva clave se guarda cifrada con BCrypt.
+     *
+     * Las sesiones que el usuario ya tenga abiertas siguen vigentes hasta que cierre sesión;
+     * la contraseña nueva se exige recién en su próximo inicio de sesión.
+     */
+    @PutMapping("/{id}/clave")
+    public ResponseEntity<?> cambiarClave(@PathVariable Long id, @RequestBody CambioClave datos) {
+        String clave = datos.clave() == null ? "" : datos.clave();
+
+        String errorClave = validarClave(clave);
+        if (errorClave != null) {
+            return error(HttpStatus.BAD_REQUEST, errorClave);
+        }
+
+        Usuario usuario = usuarioRepo.findById(id).orElse(null);
+        if (usuario == null) {
+            return error(HttpStatus.NOT_FOUND, "El usuario no existe.");
+        }
+
+        usuario.setClave(passwordEncoder.encode(clave)); // se guarda cifrada con BCrypt
+        usuario = usuarioRepo.save(usuario);
+
+        return ResponseEntity.ok(resumir(usuario));
+    }
+
+    /** Reglas de la contraseña (alta y cambio). Devuelve el mensaje de error, o null si es válida. */
+    private static String validarClave(String clave) {
+        if (clave.length() < CLAVE_MIN_CARACTERES) {
+            return "La contraseña debe tener al menos " + CLAVE_MIN_CARACTERES + " caracteres.";
+        }
+        if (clave.getBytes(StandardCharsets.UTF_8).length > CLAVE_MAX_BYTES) {
+            return "La contraseña es demasiado larga.";
+        }
+        return null;
     }
 
     private static UsuarioResumen resumir(Usuario u) {

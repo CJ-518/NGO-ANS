@@ -64,6 +64,10 @@
         </form>
 
         <h2>Usuarios registrados</h2>
+
+        <!-- Resultado del cambio de contraseña (lo completa usuarios.js) -->
+        <div id="mensaje-lista" style="display: none; margin-bottom: 15px; padding: 10px 12px; border-radius: 4px;"></div>
+
         <table>
             <thead>
                 <tr>
@@ -71,6 +75,7 @@
                     <th>Correo</th>
                     <th>Rol</th>
                     <th>Estado</th>
+                    <th>Acciones</th>
                 </tr>
             </thead>
             <tbody id="usuarios-body">
@@ -78,6 +83,38 @@
             </tbody>
         </table>
     </main>
+
+    <!-- Ventana para cambiar la contraseña de un usuario sin conocer la actual (la abre usuarios.js) -->
+    <div id="modal-clave" class="modal-overlay" style="display: none;" role="dialog" aria-modal="true"
+         aria-labelledby="modal-clave-titulo">
+        <div class="modal-content" style="max-width: 460px;">
+            <button type="button" id="modal-clave-cerrar" class="modal-cerrar" aria-label="Cerrar">&times;</button>
+            <h2 id="modal-clave-titulo" style="margin-top: 0;">Cambiar contraseña</h2>
+            <p id="modal-clave-usuario" style="color: #4a5568; margin-top: 0;"></p>
+
+            <form id="clave-form">
+                <div style="margin-bottom: 15px;">
+                    <label for="nueva-clave">Contraseña nueva</label>
+                    <input type="password" id="nueva-clave" minlength="8" autocomplete="new-password" required>
+                </div>
+                <div style="margin-bottom: 15px;">
+                    <label for="nueva-clave2">Repetir contraseña nueva</label>
+                    <input type="password" id="nueva-clave2" minlength="8" autocomplete="new-password" required>
+                </div>
+                <p style="color: #718096; font-size: 13px; margin-top: 0;">
+                    Mínimo 8 caracteres. No hace falta conocer la contraseña actual.
+                </p>
+
+                <div id="mensaje-clave" style="display: none; margin-bottom: 15px; padding: 10px 12px; border-radius: 4px;"></div>
+
+                <div style="text-align: right;">
+                    <button type="button" id="clave-cancelar" class="btn-primary"
+                            style="background-color: #718096; margin-right: 8px;">Cancelar</button>
+                    <button type="submit" class="btn-primary">Guardar contraseña</button>
+                </div>
+            </form>
+        </div>
+    </div>
 
     <script src="sesion.js"></script>
     <script src="usuarios.js"></script>

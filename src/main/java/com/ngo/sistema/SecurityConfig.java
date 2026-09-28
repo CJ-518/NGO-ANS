@@ -59,12 +59,11 @@ public class SecurityConfig {
                 .requestMatchers("/portal-ventas.html", "/portal-ventas.js").hasAnyRole("VENDEDOR", "ADMINISTRADOR")
                 .requestMatchers(HttpMethod.POST, "/api/ventas").hasAnyRole("VENDEDOR", "ADMINISTRADOR")
                 .requestMatchers(HttpMethod.GET, "/api/ventas").hasAnyRole("VENDEDOR", "ADMINISTRADOR")
-                // Factura en PDF: el ATENCION también la abre, desde "Nueva solicitud" (ve las facturas del cliente)
+                // Factura en PDF: el ATENCION también la abre, desde "Nueva solicitud" (abre la factura del producto)
                 .requestMatchers(HttpMethod.GET, "/api/ventas/*/factura").hasAnyRole("VENDEDOR", "ADMINISTRADOR", "ATENCION")
-                .requestMatchers(HttpMethod.GET, "/api/clientes/*/facturas").hasAnyRole("ADMINISTRADOR", "ATENCION")
-                // Alta de artículos y corrección de stock: solo ADMINISTRADOR
+                .requestMatchers(HttpMethod.GET, "/api/productos/*/factura").hasAnyRole("ADMINISTRADOR", "ATENCION")
+                // Alta de artículos: solo ADMINISTRADOR
                 .requestMatchers(HttpMethod.POST, "/api/articulos").hasRole("ADMINISTRADOR")
-                .requestMatchers(HttpMethod.PUT, "/api/articulos/*/stock").hasRole("ADMINISTRADOR")
 
                 // TECNICO no puede dar de alta clientes/solicitudes nuevas,
                 // ni cambiar el estado de cualquier solicitud: eso queda para ADMINISTRADOR y ATENCION.

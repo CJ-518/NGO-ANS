@@ -9,16 +9,16 @@ const nombreDeRol = (rol) => ROLES_LEGIBLES[rol] || rol || '';
 
 // ---------- Mensajes ----------
 
-function mostrarMensaje(texto, esError) {
-    const caja = document.getElementById('mensaje');
+function mostrarMensaje(texto, esError, idCaja = 'mensaje') {
+    const caja = document.getElementById(idCaja);
     caja.textContent = texto;
     caja.style.display = 'block';
     caja.style.backgroundColor = esError ? '#fed7d7' : '#c6f6d5';
     caja.style.color = esError ? '#742a2a' : '#22543d';
 }
 
-function ocultarMensaje() {
-    document.getElementById('mensaje').style.display = 'none';
+function ocultarMensaje(idCaja = 'mensaje') {
+    document.getElementById(idCaja).style.display = 'none';
 }
 
 // ---------- Listado ----------
@@ -32,13 +32,24 @@ function celda(texto) {
 function filaDe(usuario) {
     const tr = document.createElement('tr');
     tr.append(celda(usuario.nombre), celda(usuario.correo), celda(nombreDeRol(usuario.rol)), celda(usuario.estado));
+
+    const tdAcciones = document.createElement('td');
+    const btnClave = document.createElement('button');
+    btnClave.type = 'button';
+    btnClave.className = 'btn-primary';
+    btnClave.style.cssText = 'padding: 6px 12px; font-size: 14px;';
+    btnClave.textContent = 'Cambiar contraseña';
+    btnClave.addEventListener('click', () => abrirModalClave(usuario));
+    tdAcciones.append(btnClave);
+    tr.append(tdAcciones);
+
     return tr;
 }
 
 function filaConMensaje(texto) {
     const tr = document.createElement('tr');
     const td = celda(texto);
-    td.colSpan = 4;
+    td.colSpan = 5;
     tr.append(td);
     return tr;
 }
@@ -98,6 +109,86 @@ document.getElementById('usuario-form').addEventListener('submit', async functio
     } catch (error) {
         console.error('Error al crear el usuario:', error);
         mostrarMensaje('Error de conexión al crear el usuario.', true);
+    } finally {
+        boton.disabled = false;
+    }
+});
+
+// ---------- Cambio de contraseña (sin conocer la actual) ----------
+
+let usuarioEnEdicion = null; // usuario al que se le está cambiando la contraseña
+
+function abrirModalClave(usuario) {
+    usuarioEnEdicion = usuario;
+    ocultarMensaje('mensaje-lista');
+    ocultarMensaje('mensaje-clave');
+    document.getElementById('clave-form').reset();
+    document.getElementById('modal-clave-usuario').textContent =
+        `Usuario: ${usuario.nombre} (${usuario.correo})`;
+    document.getElementById('modal-clave').style.display = 'flex';
+    document.getElementById('nueva-clave').focus();
+}
+
+function cerrarModalClave() {
+    document.getElementById('modal-clave').style.display = 'none';
+    document.getElementById('clave-form').reset(); // no dejar contraseñas escritas en el formulario
+    usuarioEnEdicion = null;
+}
+
+document.getElementById('modal-clave-cerrar').addEventListener('click', cerrarModalClave);
+document.getElementById('clave-cancelar').addEventListener('click', cerrarModalClave);
+document.getElementById('modal-clave').addEventListener('click', (event) => {
+    // Un clic en el fondo oscuro (no dentro de la ventana) también cierra
+    if (event.target.id === 'modal-clave') cerrarModalClave();
+});
+document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape' && usuarioEnEdicion) cerrarModalClave();
+});
+
+document.getElementById('clave-form').addEventListener('submit', async function(event) {
+    event.preventDefault();
+    ocultarMensaje('mensaje-clave');
+
+    if (!usuarioEnEdicion) return;
+
+    const clave = document.getElementById('nueva-clave').value;
+    const clave2 = document.getElementById('nueva-clave2').value;
+
+    if (clave !== clave2) {
+        mostrarMensaje('Las contraseñas no coinciden.', true, 'mensaje-clave');
+        return;
+    }
+
+    const boton = this.querySelector('button[type="submit"]');
+    boton.disabled = true; // evita enviar dos veces el mismo cambio
+
+    try {
+        const res = await fetch(`/api/usuarios/${usuarioEnEdicion.idUsuario}/clave`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ clave })
+        });
+
+        let datos = null;
+        try { datos = await res.json(); } catch (e) { /* la respuesta puede no traer JSON */ }
+
+        if (res.ok) {
+            const cambiado = usuarioEnEdicion;
+            cerrarModalClave();
+            mostrarMensaje(`Contraseña actualizada para ${cambiado.nombre}. Deberá usar la nueva en su próximo inicio de sesión.`,
+                false, 'mensaje-lista');
+        } else if (res.status === 403) {
+            mostrarMensaje('No tenés permiso para cambiar contraseñas.', true, 'mensaje-clave');
+        } else if (res.status === 404) {
+            cerrarModalClave();
+            mostrarMensaje('El usuario ya no existe.', true, 'mensaje-lista');
+            cargarUsuarios();
+        } else {
+            mostrarMensaje((datos && datos.error) || 'No se pudo cambiar la contraseña.', true, 'mensaje-clave');
+        }
+    } catch (error) {
+        console.error('Error al cambiar la contraseña:', error);
+        mostrarMensaje('Error de conexión al cambiar la contraseña.', true, 'mensaje-clave');
     } finally {
         boton.disabled = false;
     }

@@ -26,8 +26,8 @@ El sistema cubre dos líneas de negocio: **servicio técnico y garantías** (sol
 
 | Rol | Propósito principal | Permisos clave |
 | --- | --- | --- |
-| `ADMINISTRADOR` | Control total | Crea usuarios, elimina solicitudes, asigna técnicos, cambia estados, vende, da de alta artículos y ajusta stock |
-| `ATENCION` | Recepción y gestión operativa | Registra clientes y solicitudes, asigna técnicos, cambia el estado de las solicitudes y abre las facturas de un cliente al registrar una solicitud |
+| `ADMINISTRADOR` | Control total | Crea usuarios, elimina solicitudes, asigna técnicos, cambia estados, vende, da de alta artículos |
+| `ATENCION` | Recepción y gestión operativa | Registra clientes y solicitudes, asigna técnicos, cambia el estado de las solicitudes y abre la factura de un producto al registrar una solicitud |
 | `TECNICO` | Atención técnica | Ve todas las solicitudes; sobre las que tiene asignadas, registra diagnóstico y las finaliza |
 | `VENDEDOR` | Portal de ventas | Registra clientes y ventas, y consulta solo sus propias ventas |
 
@@ -62,7 +62,7 @@ Los permisos se aplican en dos niveles: `SecurityConfig` (reglas por ruta) y `@P
 - Se escribe el documento del cliente: si existe, se autocompletan sus datos (y se pueden corregir); si no, se crea un cliente nuevo.
 - Un menú desplegable ofrece los productos que ese cliente ya compró (tipo, marca, modelo y número de serie), y cada opción indica si la garantía está vigente o vencida.
 - Antes de registrar se muestra el estado de la garantía del producto elegido.
-- Al elegir un producto también se listan las **facturas del cliente** (número, fecha, total y artículos), cada una con un enlace **Abrir factura** que muestra el PDF en una pestaña nueva. Si el número de serie del producto es de una venta del sistema (`VTA-{venta}-...`), la factura de esa compra aparece primera con la marca *COMPRA DE ESTE PRODUCTO*; los productos cargados de otra forma no tienen esa marca y solo se listan las facturas del cliente. Si el cliente no tiene facturas, se muestra un aviso.
+- Al elegir un producto se muestra la **factura de su compra** (número, fecha, total y artículos), obtenida de la venta asociada al producto (`producto.id_venta`), con un enlace **Abrir factura** que muestra el PDF en una pestaña nueva. Si el producto no tiene venta asociada, se muestra un aviso.
 - Solo pueden registrar solicitudes `ADMINISTRADOR` y `ATENCION`.
 
 ### 4. Garantías
@@ -74,7 +74,7 @@ La garantía **no se guarda en una tabla**: se calcula siempre a partir de `prod
 - Catálogo de artículos activos con su stock.
 - Registro de ventas con varios artículos; el precio se guarda en cada renglón y el stock se descuenta en la misma transacción.
 - La venta puede tener un cliente asociado o ser a consumidor final.
-- Si la venta tiene cliente, se genera un **producto por cada unidad vendida** (con número de serie interno `VTA-{venta}-{artículo}-{n}`), para que luego pueda entrar en el flujo de garantías. Las ventas a consumidor final no generan productos.
+- Si la venta tiene cliente, se genera un **producto por cada unidad vendida** (con número de serie `SN-XX-0000`, donde `XX` es el prefijo del tipo de producto y el número sigue al mayor ya usado), vinculado a su venta mediante `producto.id_venta`, para que luego pueda entrar en el flujo de garantías. Las ventas a consumidor final no generan productos.
 - `VENDEDOR` solo ve sus ventas; `ADMINISTRADOR` ve todas y es el único que puede dar de alta artículos.
 
 ### 6. Administración de usuarios
@@ -82,6 +82,7 @@ La garantía **no se guarda en una tabla**: se calcula siempre a partir de `prod
 - Solo `ADMINISTRADOR` accede a `usuarios.html`.
 - Permite crear usuarios con rol `ATENCION`, `TECNICO` o `VENDEDOR`.
 - El correo debe ser único y la contraseña (mínimo 8 caracteres) se guarda cifrada.
+- Cada fila de la tabla tiene el botón **Cambiar contraseña**: el administrador escribe la contraseña nueva (dos veces) y se guarda cifrada, **sin necesidad de conocer la actual**. Sirve para cualquier usuario, incluidos otros administradores y el propio. Se aplican las mismas reglas que en el alta (8 a 72 bytes). Las sesiones que el usuario ya tenía abiertas siguen vigentes hasta que cierre sesión; la contraseña nueva se exige en su próximo inicio de sesión.
 
 ### 7. Factura de venta en PDF
 
@@ -116,7 +117,7 @@ La garantía **no se guarda en una tabla**: se calcula siempre a partir de `prod
 | Tabla | Contenido |
 | ----- | --------- |
 | `cliente` | Nombre, documento (único, solo números), teléfono y correo |
-| `producto` | Equipo vendido: marca, modelo, N° de serie (único), tipo, cliente dueño y fecha de venta |
+| `producto` | Equipo vendido: marca, modelo, N° de serie (único), tipo, cliente dueño, fecha de venta y venta de la que salió (`id_venta`) |
 | `solicitud` | Solicitud de servicio: cliente, producto, descripción, estado actual y `codigo_publico` (UUID único para el link de seguimiento) |
 | `asignacion` | Historial de técnicos asignados a cada solicitud (la última es la vigente) |
 | `seguimiento` | Registros de diagnóstico y cierre de cada solicitud |
@@ -125,6 +126,8 @@ La garantía **no se guarda en una tabla**: se calcula siempre a partir de `prod
 | `venta` / `detalle_venta` | Ventas y sus renglones |
 
 `articulo` es independiente de `producto`: un artículo es un tipo de mercadería con stock; un producto es un equipo concreto con número de serie y dueño.
+
+Los artículos con `estado = 'INACTIVO'` no aparecen en el catálogo del Portal de Ventas: son los que respaldan las ventas históricas (uno por cada equipo vendido antes de que existiera el portal). Tienen stock 0 y su descripción termina en `N/S <número de serie>`. El vínculo entre un producto y su venta es `producto.id_venta`, no esa descripción. No se pueden borrar sin borrar también las ventas que los referencian.
 
 ---
 
@@ -217,9 +220,21 @@ createdb -U postgres ngo_saeca
 psql -U postgres -d ngo_saeca -f db/ngo_ans.sql
 ```
 
-`db/ngo_ans.sql` es un volcado de `pg_dump` 18 con el esquema y los datos de ejemplo. Usá un cliente `psql` reciente: el archivo incluye los comandos `\restrict` / `\unrestrict` que agrega `pg_dump`.
+`db/ngo_ans.sql` es un volcado de `pg_dump` 18 con el esquema y los datos de ejemplo, que incluye los vendedores y un historial de ventas (ver "Historial de ventas incluido"). Usá un cliente `psql` reciente: el archivo incluye los comandos `\restrict` / `\unrestrict` que agrega `pg_dump`.
 
-> ⚠️ Este respaldo todavía define `articulo.id_articulo` con un `DEFAULT nextval(...)`, previo a la migración a `GENERATED ALWAYS AS IDENTITY` descripta más abajo. Si restaurás el respaldo en una base nueva, volvé a aplicar esa migración para mantener la protección contra inserción manual del id.
+El respaldo también crea la extensión `pgcrypto`. **La aplicación no la usa** (las contraseñas se cifran con BCrypt desde Java); está disponible únicamente para los cambios hechos directamente en la base de datos, como restablecer una contraseña por SQL (ver "Restablecer la contraseña de un usuario"). Si solo usás la aplicación, no es necesaria.
+
+
+### Actualizar una base ya existente
+
+`spring.jpa.hibernate.ddl-auto=update` nunca borra tablas ni columnas. Si tu base viene de una versión anterior del respaldo, quitá lo que ya no usa la aplicación (las tablas `garantia` y `servicio_autorizado`, la columna `venta.estado` y la columna `rol.descripcion`):
+
+```sql
+DROP TABLE IF EXISTS public.garantia;
+DROP TABLE IF EXISTS public.servicio_autorizado;
+ALTER TABLE public.venta DROP COLUMN IF EXISTS estado;
+ALTER TABLE public.rol DROP COLUMN IF EXISTS descripcion;
+```
 
 ### Alta de artículos por SQL
 
@@ -240,7 +255,7 @@ Se puede pegar directo en la Query Tool de pgAdmin4 o en `psql`. **Preferí pgAd
 
 ## Datos de ejemplo y usuarios de prueba
 
-El respaldo incluye los cuatro roles, un usuario por rol, clientes y productos ficticios, y un artículo de ejemplo en el catálogo.
+El respaldo incluye los cuatro roles, un usuario por rol, clientes y productos ficticios, un historial de ventas y algunos artículos activos en el catálogo.
 
 | Correo | Rol |
 | ------ | --- |
@@ -248,12 +263,26 @@ El respaldo incluye los cuatro roles, un usuario por rol, clientes y productos f
 | `atencion@ngosaeca.com.py` | `ATENCION` |
 | `vendedor@ngosaeca.com.py` | `VENDEDOR` |
 | `tecnico@ngosaeca.com.py` | `TECNICO` |
+| `carlos.benitez@ngosaeca.com.py` | `VENDEDOR` |
+| `lucia.fernandez@ngosaeca.com.py` | `VENDEDOR` |
+| `marcos.duarte@ngosaeca.com.py` | `VENDEDOR` |
+| `sofia.acosta@ngosaeca.com.py` | `VENDEDOR` |
+| `andres.cabrera@ngosaeca.com.py` | `VENDEDOR` |
 
-Las contraseñas están cifradas con BCrypt dentro del respaldo, por lo que no aparecen en el repositorio.
+Las contraseñas de todos los usuarios están cifradas con BCrypt dentro del respaldo, por lo que no aparecen en el repositorio. Cambialas desde **Usuarios → Cambiar contraseña** antes de cualquier uso real.
+
+### Historial de ventas incluido
+
+Los productos del respaldo figuran como vendidos (tienen cliente y fecha de venta), y cada uno tiene su venta `COMPLETADA` con su factura en PDF, generada al vuelo (`GET /api/ventas/{id}/factura`). Cada venta aparece en **Ventas recientes** del vendedor y del administrador, y su factura se abre desde **Nueva solicitud** al elegir el producto.
+
+- **Los precios de este historial son valores de ejemplo**: no existen datos reales de precio.
+- Los artículos que respaldan esas ventas están `INACTIVO` y con stock 0 (ver "Modelo de datos").
 
 ### Restablecer la contraseña de un usuario
 
-Desde `psql`, con la extensión `pgcrypto` (genera hashes BCrypt compatibles con Spring Security):
+Lo normal es hacerlo desde la interfaz: un `ADMINISTRADOR` entra a **Usuarios** y usa **Cambiar contraseña** en la fila del usuario (no pide la contraseña actual). Si ningún administrador puede iniciar sesión, queda el camino por base de datos.
+
+Desde `psql`, con la extensión `pgcrypto` (genera hashes BCrypt compatibles con Spring Security). **`pgcrypto` es solo para estos cambios hechos directamente en la base de datos**; la aplicación no la necesita para funcionar:
 
 ```sql
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
@@ -275,11 +304,10 @@ Todas las rutas requieren sesión iniciada, salvo `/login.html`, `/login`, `/sty
 | `GET` | `/api/clientes` | Clientes que tienen al menos un producto | autenticado |
 | `GET` | `/api/clientes/buscar?documento=` | Busca un cliente por documento exacto (404 si no existe) | autenticado |
 | `GET` | `/api/clientes/{id}/productos` | Productos de un cliente | autenticado |
-| `GET` | `/api/clientes/{id}/facturas` | Facturas (ventas) de un cliente: número, fecha, total y artículos | `ADMINISTRADOR`, `ATENCION` |
 | `POST` | `/api/clientes` | Crea un cliente | `ADMINISTRADOR`, `ATENCION`, `VENDEDOR` |
 | `PUT` | `/api/clientes/{id}` | Actualiza nombre, teléfono y correo | `ADMINISTRADOR`, `ATENCION`, `VENDEDOR` |
-| `GET` | `/api/productos` | Lista de productos | autenticado |
 | `GET` | `/api/productos/{id}/garantia` | Garantía calculada de un producto | autenticado |
+| `GET` | `/api/productos/{id}/factura` | Factura (número, fecha, total y artículos) de la venta de la que salió el producto; 404 si no tiene venta asociada | `ADMINISTRADOR`, `ATENCION` |
 | `GET` | `/api/solicitudes` | Lista de solicitudes | autenticado |
 | `GET` | `/api/solicitudes/buscar?documento=` | Busca por documento del cliente | autenticado |
 | `GET` | `/api/solicitudes/{id}` | Detalle de una solicitud | autenticado |
@@ -293,9 +321,9 @@ Todas las rutas requieren sesión iniciada, salvo `/login.html`, `/login`, `/sty
 | `GET` | `/api/tecnicos` | Técnicos activos con su cantidad de solicitudes pendientes, ordenados de menor a mayor carga | `ADMINISTRADOR`, `ATENCION` |
 | `GET` | `/api/usuarios` | Lista de usuarios | `ADMINISTRADOR` |
 | `POST` | `/api/usuarios` | Crea un usuario (`ATENCION`, `TECNICO` o `VENDEDOR`) | `ADMINISTRADOR` |
+| `PUT` | `/api/usuarios/{id}/clave` | Cambia la contraseña de un usuario sin pedir la actual. Cuerpo: `{"clave": "..."}` (8 a 72 bytes). 404 si el usuario no existe | `ADMINISTRADOR` |
 | `GET` | `/api/articulos` | Catálogo de artículos activos | autenticado |
 | `POST` | `/api/articulos` | Alta de artículo | `ADMINISTRADOR` |
-| `PUT` | `/api/articulos/{id}/stock` | Ajusta el stock de un artículo | `ADMINISTRADOR` |
 | `GET` | `/api/ventas` | Ventas (todas para el administrador, solo las propias para el vendedor) | `VENDEDOR`, `ADMINISTRADOR` |
 | `POST` | `/api/ventas` | Registra una venta y descuenta stock | `VENDEDOR`, `ADMINISTRADOR` |
 | `GET` | `/api/ventas/{id}/factura` | Factura simple en PDF de la venta (`?abrir=true` la muestra en el navegador en vez de descargarla) | `VENDEDOR` (propia), `ADMINISTRADOR` y `ATENCION` (cualquiera) |
@@ -345,7 +373,7 @@ export DB_PASSWORD="tu_contrasena"
 1. Abrí <http://localhost:8080>; sin sesión te lleva al login.
 2. Iniciá sesión con uno de los usuarios de prueba.
 3. En el panel principal (`/index.html`) probá la búsqueda por documento y hacé clic en una fila para ver el detalle y el seguimiento.
-4. Con `ATENCION` o `ADMINISTRADOR`, entrá a **Nueva solicitud**, escribí el documento de un cliente, elegí uno de sus productos, revisá el estado de la garantía y abrí sus facturas con **Abrir factura** antes de registrar.
+4. Con `ATENCION` o `ADMINISTRADOR`, entrá a **Nueva solicitud**, escribí el documento de un cliente, elegí uno de sus productos, revisá el estado de la garantía y abrí la factura de su compra con **Abrir factura** antes de registrar.
 5. Asigná un técnico desde la tabla (la lista muestra cuántas solicitudes pendientes tiene cada uno y ofrece primero a quien tiene menos); después iniciá sesión como `TECNICO` para actualizar el estado desde **Actualizar estado**.
 6. Con `VENDEDOR` o `ADMINISTRADOR`, probá una venta desde el **Portal de Ventas**.
 
@@ -355,7 +383,6 @@ export DB_PASSWORD="tu_contrasena"
 
 - **Reiniciar tras cada cambio:** Maven copia los archivos estáticos al arrancar, así que cualquier cambio en `src/` requiere reiniciar la aplicación. Después, recargá el navegador con `Ctrl + F5`.
 - **Esquema:** `spring.jpa.hibernate.ddl-auto=update` agrega tablas o columnas nuevas si faltan, pero **nunca borra** las que sobran. Si eliminás una entidad, la tabla hay que borrarla a mano.
-- **`articulo.id_articulo` es IDENTITY:** se migró de `DEFAULT nextval(...)` a `GENERATED ALWAYS AS IDENTITY` para que no se pueda insertar el id a mano por error (ver "Alta de artículos por SQL"). `Articulo.java` no necesitó cambios: ya usaba `GenerationType.IDENTITY`.
 - **Logs:** la terminal muestra solo errores críticos. Si algo falla (por ejemplo, un error de PostgreSQL al guardar o eliminar), el detalle aparece ahí.
 - **Tests:** por ahora solo existe `SistemaApplicationTests` (`contextLoads`).
 
@@ -370,10 +397,10 @@ export DB_PASSWORD="tu_contrasena"
 | `Port 8080 was already in use` | Otro proceso ocupa el puerto; cerralo o cambiá `server.port` en `application.properties`. |
 | Errores con `\restrict` al restaurar el respaldo | El cliente `psql` es antiguo; usá una versión reciente. |
 | "Correo o contraseña incorrectos" | El correo no existe en `usuario`, la contraseña no coincide o el usuario no tiene `estado = 'ACTIVO'`. |
-| No recuerdo la contraseña de un usuario | Restablecela con el SQL de la sección "Restablecer la contraseña de un usuario". |
+| No recuerdo la contraseña de un usuario | Un `ADMINISTRADOR` la cambia desde **Usuarios → Cambiar contraseña** (no pide la actual). Si nadie puede entrar, usá el SQL de la sección "Restablecer la contraseña de un usuario". |
 | Entro, pero no puedo crear, cambiar el estado o eliminar | El rol del usuario no permite esa acción. Los nombres de rol válidos son `ADMINISTRADOR`, `ATENCION`, `TECNICO` y `VENDEDOR`. |
-| El panel carga vacío | Hay que crear solicitudes desde **Nueva solicitud**; el respaldo no trae solicitudes cargadas. |
-| En Nueva solicitud aparece "Este cliente no tiene facturas registradas" | El cliente no tiene ventas asociadas en `venta.id_cliente` (por ejemplo, sus productos vienen del respaldo y no de una venta hecha desde el Portal de Ventas). |
+| El panel carga vacío | Todavía no hay solicitudes: se crean desde **Nueva solicitud** (el respaldo trae muy pocas). |
+| En Nueva solicitud aparece "No se encontró la factura de este producto en el sistema" | El producto no tiene venta asociada (`producto.id_venta` es NULL). Los productos generados por el Portal de Ventas y los del respaldo ya la tienen. |
 | El formulario no sugiere productos | La tabla `producto` está vacía: restaurá `db/ngo_ans.sql` o registrá una venta con cliente. |
 | Un técnico no ve el botón "Actualizar estado" | La solicitud no está asignada a ese técnico o ya está `FINALIZADA`. |
 | No se puede ejecutar `iniciar.ps1` | Política de ejecución de PowerShell: `Set-ExecutionPolicy -Scope Process RemoteSigned`. |
@@ -387,10 +414,9 @@ export DB_PASSWORD="tu_contrasena"
 Prototipo académico con fines demostrativos, no preparado para producción. Limitaciones conocidas:
 
 - **Seguridad:** la protección CSRF está desactivada (la API solo la consume el propio frontend); debe reactivarse antes de cualquier despliegue real.
-- **Usuarios:** el administrador puede crearlos, pero todavía no hay forma de editarlos, desactivarlos ni restablecer su contraseña desde la interfaz.
+- **Usuarios:** el administrador puede crearlos y cambiar la contraseña de cualquiera desde la interfaz, pero todavía no hay forma de editarlos ni desactivarlos. Cambiar una contraseña no cierra las sesiones que el usuario ya tenía abiertas.
 - **Roles:** se administran directamente en la base de datos.
-- **Productos:** solo se generan a partir de ventas con cliente; no hay pantalla para crearlos ni editarlos. Su número de serie es interno (`VTA-...`), no el de fábrica.
-- **Artículos:** existe el endpoint para ajustar el stock (`PUT /api/articulos/{id}/stock`), pero la interfaz todavía no tiene un botón para usarlo, ni para editar o desactivar artículos. Como alternativa, se puede cargar stock nuevo por SQL (ver "Alta de artículos por SQL").
+- **Productos:** solo se generan a partir de ventas con cliente; no hay pantalla para crearlos ni editarlos. Su número de serie es interno (`SN-XX-0000`), no el de fábrica.
+- **Artículos:** desde la interfaz solo se pueden dar de alta; no hay forma de ajustar el stock, editar o desactivar artículos. Como alternativa, se puede cargar stock nuevo por SQL (ver "Alta de artículos por SQL").
 - **Estados:** el cambio manual de estado hecho por `ADMINISTRADOR` o `ATENCION` no queda registrado en el seguimiento, y el backend no valida que el valor enviado sea uno de los cuatro estados oficiales.
-- **Facturas por producto:** el vínculo entre un producto y la factura de su compra se deduce del número de serie (`VTA-{venta}-...`); no hay una relación directa `producto` → `venta` en la base. Los productos que no vienen de una venta del sistema solo muestran la lista de facturas del cliente.
 - **Datos de ejemplo:** el respaldo incluye usuarios de prueba; esas cuentas y sus contraseñas deben reemplazarse antes de cualquier uso real.

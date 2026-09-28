@@ -56,7 +56,7 @@ function pintarArticulos() {
     tbody.innerHTML = '';
 
     if (articulos.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="6" style="color: #a0aec0;">No hay artículos cargados en el catálogo.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="8" style="color: #a0aec0;">No hay artículos cargados en el catálogo.</td></tr>';
         return;
     }
 
@@ -69,6 +69,12 @@ function pintarArticulos() {
 
         const tdCategoria = document.createElement('td');
         tdCategoria.textContent = articulo.categoria || '-';
+
+        const tdMarca = document.createElement('td');
+        tdMarca.textContent = articulo.marca || '-';
+
+        const tdModelo = document.createElement('td');
+        tdModelo.textContent = articulo.modelo || '-';
 
         const tdPrecio = document.createElement('td');
         tdPrecio.textContent = formatoGs(articulo.precio);
@@ -97,7 +103,7 @@ function pintarArticulos() {
         });
         tdAccion.appendChild(btnAgregar);
 
-        fila.append(tdNombre, tdCategoria, tdPrecio, tdStock, tdCantidad, tdAccion);
+        fila.append(tdNombre, tdCategoria, tdMarca, tdModelo, tdPrecio, tdStock, tdCantidad, tdAccion);
         tbody.appendChild(fila);
     });
 }
@@ -397,12 +403,18 @@ async function crearArticulo(evento) {
 
     const nombre = document.getElementById('art-nombre').value.trim();
     const categoria = document.getElementById('art-categoria').value.trim();
+    const marca = document.getElementById('art-marca').value.trim();
+    const modelo = document.getElementById('art-modelo').value.trim();
     const descripcion = document.getElementById('art-descripcion').value.trim();
     const precio = parseFloat(document.getElementById('art-precio').value.replace(',', '.'));
     const stock = parseInt(document.getElementById('art-stock').value, 10);
 
     if (!nombre) {
         mostrarMensaje('articulo-mensaje', 'El nombre es obligatorio.', 'error');
+        return;
+    }
+    if (!categoria || !marca || !modelo) {
+        mostrarMensaje('articulo-mensaje', 'La categoría (tipo de producto), la marca y el modelo son obligatorios.', 'error');
         return;
     }
     if (Number.isNaN(precio) || precio < 0) {
@@ -418,7 +430,7 @@ async function crearArticulo(evento) {
         const res = await fetch('/api/articulos', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ nombre, categoria, descripcion, precio, stock })
+            body: JSON.stringify({ nombre, categoria, marca, modelo, descripcion, precio, stock })
         });
 
         if (!res.ok) {

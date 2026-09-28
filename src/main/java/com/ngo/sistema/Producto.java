@@ -40,6 +40,13 @@ public class Producto {
     @Column(name = "fecha_venta", nullable = false)
     private LocalDate fechaVenta;
 
+    // Venta (factura) de la que salió este producto. Es la misma relación para los productos vendidos
+    // desde el Portal de Ventas y para los del historial. No se serializa: la API de productos no cambia.
+    @JsonIgnore
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "id_venta")
+    private Venta venta;
+
     // Getters and Setters
     public Long getIdProducto() { return idProducto; }
     public void setIdProducto(Long idProducto) { this.idProducto = idProducto; }
@@ -61,6 +68,9 @@ public class Producto {
 
     public LocalDate getFechaVenta() { return fechaVenta; }
     public void setFechaVenta(LocalDate fechaVenta) { this.fechaVenta = fechaVenta; }
+
+    public Venta getVenta() { return venta; }
+    public void setVenta(Venta venta) { this.venta = venta; }
 
     // ---------- Garantía calculada (fecha de venta + 1 año) ----------
 
