@@ -351,5 +351,3 @@ Prototipo académico con fines demostrativos, no preparado para producción. Lim
 - **Artículos:** desde la interfaz solo se pueden dar de alta; no hay forma de ajustar el stock, editar o desactivar artículos.
 - **Estados:** el cambio manual de estado hecho por `ADMINISTRADOR` o `ATENCION` no queda registrado en el seguimiento, y el backend no valida que el valor enviado sea uno de los cuatro estados oficiales.
 - **Datos de ejemplo:** el respaldo incluye usuarios de prueba; esas cuentas y sus contraseñas deben reemplazarse antes de cualquier uso real.
-````
-````
