@@ -127,8 +127,7 @@ La garantía **no se guarda aparte**: se calcula siempre a partir de la fecha de
 ````text
 NGO-ANS/
 ├── db/
-│   ├── ngo_ans.sql
-│   └── migracion-orden-ventas.sql
+│   └── ngo_ans.sql
 ├── src/
 │   ├── main/
 │   │   ├── java/com/ngo/sistema/
