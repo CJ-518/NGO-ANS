@@ -38,11 +38,6 @@ async function cargarUsuarioActual() {
         if (thAcciones && !tieneColumnaAcciones()) {
             thAcciones.style.display = 'none';
         }
-
-        // Quienes pueden asignar (ADMINISTRADOR y ATENCION) necesitan la lista de técnicos.
-        if (rolActual === 'ADMINISTRADOR' || rolActual === 'ATENCION') {
-            await cargarTecnicos();
-        }
     } catch (error) {
         console.error('Error cargando el usuario actual:', error);
     }
@@ -390,10 +385,17 @@ async function abrirDetalle(id) {
     }
 }
 
-function cargarSolicitudes(documento = '') {
+async function cargarSolicitudes(documento = '') {
     const url = documento
         ? `/api/solicitudes/buscar?documento=${encodeURIComponent(documento)}`
         : '/api/solicitudes';
+
+    // Quienes pueden asignar (ADMINISTRADOR y ATENCION) necesitan la lista de técnicos con su
+    // carga actual. Se pide en cada recarga para que las cantidades y el orden estén al día
+    // (cambian al asignar una solicitud o al finalizarla).
+    if (rolActual === 'ADMINISTRADOR' || rolActual === 'ATENCION') {
+        await cargarTecnicos();
+    }
 
     fetch(url)
         .then(response => response.json())
@@ -448,7 +450,7 @@ function cargarSolicitudes(documento = '') {
                     }
                     tecnicos.forEach(t => {
                         const seleccionado = asignado && asignado.idUsuario === t.idUsuario ? 'selected' : '';
-                        selectTecnico += `<option value="${t.idUsuario}" ${seleccionado}>${escaparHtml(t.nombre)}</option>`;
+                        selectTecnico += `<option value="${t.idUsuario}" ${seleccionado}>${escaparHtml(t.nombre)} (${t.pendientes} ${t.pendientes === 1 ? 'pendiente' : 'pendientes'})</option>`;
                     });
                     // Si el técnico asignado ya no está activo, igualmente se muestra su nombre
                     if (asignado && !tecnicos.some(t => t.idUsuario === asignado.idUsuario)) {

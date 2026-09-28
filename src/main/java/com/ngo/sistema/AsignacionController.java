@@ -6,6 +6,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -20,8 +22,8 @@ public class AsignacionController {
     /** Cuerpo del pedido: el usuario (con rol TECNICO) que se asigna. */
     public record NuevaAsignacion(Long idTecnico) {}
 
-    /** Técnico disponible para asignar. */
-    public record TecnicoResumen(Long idUsuario, String nombre) {}
+    /** Técnico disponible para asignar, con la cantidad de solicitudes pendientes que tiene. */
+    public record TecnicoResumen(Long idUsuario, String nombre, long pendientes) {}
 
     @Autowired
     private SolicitudRepository solicitudRepo;
@@ -32,12 +34,21 @@ public class AsignacionController {
     @Autowired
     private AsignacionRepository asignacionRepo;
 
-    // Lista de técnicos activos, para el selector de la tabla
+    // Lista de técnicos activos, para el selector de la tabla. Vienen ordenados por carga de
+    // trabajo: primero los que tienen menos solicitudes pendientes (a igual carga, por nombre).
     @PreAuthorize("hasAnyRole('ADMINISTRADOR', 'ATENCION')")
     @GetMapping("/tecnicos")
     public List<TecnicoResumen> listarTecnicos() {
+        Map<Long, Long> pendientes = new HashMap<>();
+        for (Object[] fila : asignacionRepo.contarPendientesPorTecnico()) {
+            pendientes.put(((Number) fila[0]).longValue(), ((Number) fila[1]).longValue());
+        }
+
         return usuarioRepo.findByRolNombreAndEstadoOrderByNombreAsc("TECNICO", "ACTIVO").stream()
-                .map(u -> new TecnicoResumen(u.getIdUsuario(), u.getNombre()))
+                .map(u -> new TecnicoResumen(u.getIdUsuario(), u.getNombre(),
+                        pendientes.getOrDefault(u.getIdUsuario(), 0L)))
+                .sorted(Comparator.comparingLong(TecnicoResumen::pendientes)
+                        .thenComparing(TecnicoResumen::nombre))
                 .toList();
     }
 
