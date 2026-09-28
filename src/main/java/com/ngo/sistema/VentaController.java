@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.*;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -35,6 +36,9 @@ public class VentaController {
 
     /** Cuerpo para ajustar el stock de un artículo existente. */
     public record AjusteStock(Integer stock) {}
+
+    /** Resumen de una factura de un cliente (para elegir cuál abrir desde "Nueva solicitud"). */
+    public record FacturaResumen(Long idVenta, LocalDateTime fecha, BigDecimal total, String detalle) {}
 
     @Autowired
     private ArticuloRepository articuloRepo;
@@ -170,21 +174,44 @@ public class VentaController {
         return ResponseEntity.status(HttpStatus.CREATED).body(venta);
     }
 
+    // Facturas de un cliente, para consultarlas al registrar una solicitud de servicio técnico
+    // (al elegir uno de sus productos). Las ven ADMINISTRADOR y ATENCION, que son quienes
+    // registran solicitudes.
+    @PreAuthorize("hasAnyRole('ADMINISTRADOR', 'ATENCION')")
+    @GetMapping("/clientes/{id}/facturas")
+    public List<FacturaResumen> facturasDelCliente(@PathVariable Long id) {
+        List<FacturaResumen> facturas = new ArrayList<>();
+        for (Venta venta : ventaRepo.findByClienteIdClienteOrderByFechaDesc(id)) {
+            List<String> renglones = new ArrayList<>();
+            for (DetalleVenta detalle : venta.getDetalles()) {
+                renglones.add(detalle.getCantidad() + " × " + detalle.getArticulo().getNombre());
+            }
+            facturas.add(new FacturaResumen(venta.getIdVenta(), venta.getFecha(), venta.getTotal(),
+                    String.join(", ", renglones)));
+        }
+        return facturas;
+    }
+
     // Descarga la factura simple en PDF de una venta ya registrada. El VENDEDOR solo puede
-    // descargar sus propias ventas (mismo criterio que listarVentas); el ADMINISTRADOR, todas.
-    @PreAuthorize("hasAnyRole('VENDEDOR', 'ADMINISTRADOR')")
+    // descargar sus propias ventas (mismo criterio que listarVentas); el ADMINISTRADOR y el
+    // ATENCION (que la consulta desde "Nueva solicitud"), cualquiera. Con ?abrir=true el PDF se
+    // muestra en el navegador (pestaña nueva) en vez de descargarse.
+    @PreAuthorize("hasAnyRole('VENDEDOR', 'ADMINISTRADOR', 'ATENCION')")
     @GetMapping("/ventas/{id}/factura")
-    public ResponseEntity<?> factura(@PathVariable Long id, @AuthenticationPrincipal UsuarioPrincipal principal) {
+    public ResponseEntity<?> factura(@PathVariable Long id,
+                                     @RequestParam(defaultValue = "false") boolean abrir,
+                                     @AuthenticationPrincipal UsuarioPrincipal principal) {
         Venta venta = ventaRepo.findById(id).orElse(null);
         if (venta == null) {
             return error(HttpStatus.NOT_FOUND, "La venta no existe.");
         }
 
         Usuario usuario = principal.getUsuario();
-        boolean esAdmin = "ADMINISTRADOR".equals(usuario.getRol().getNombre());
+        String rol = usuario.getRol().getNombre();
+        boolean veTodas = "ADMINISTRADOR".equals(rol) || "ATENCION".equals(rol);
         boolean esPropia = venta.getVendedor() != null
                 && venta.getVendedor().getIdUsuario().equals(usuario.getIdUsuario());
-        if (!esAdmin && !esPropia) {
+        if (!veTodas && !esPropia) {
             return error(HttpStatus.FORBIDDEN, "No tenés permiso para ver esta factura.");
         }
 
@@ -197,7 +224,8 @@ public class VentaController {
 
         return ResponseEntity.ok()
                 .contentType(MediaType.APPLICATION_PDF)
-                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"factura-" + venta.getIdVenta() + ".pdf\"")
+                .header(HttpHeaders.CONTENT_DISPOSITION,
+                        (abrir ? "inline" : "attachment") + "; filename=\"factura-" + venta.getIdVenta() + ".pdf\"")
                 .body(pdf);
     }
 

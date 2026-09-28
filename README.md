@@ -27,7 +27,7 @@ El sistema cubre dos líneas de negocio: **servicio técnico y garantías** (sol
 | Rol | Propósito principal | Permisos clave |
 | --- | --- | --- |
 | `ADMINISTRADOR` | Control total | Crea usuarios, elimina solicitudes, asigna técnicos, cambia estados, vende, da de alta artículos y ajusta stock |
-| `ATENCION` | Recepción y gestión operativa | Registra clientes y solicitudes, asigna técnicos y cambia el estado de las solicitudes |
+| `ATENCION` | Recepción y gestión operativa | Registra clientes y solicitudes, asigna técnicos, cambia el estado de las solicitudes y abre las facturas de un cliente al registrar una solicitud |
 | `TECNICO` | Atención técnica | Ve todas las solicitudes; sobre las que tiene asignadas, registra diagnóstico y las finaliza |
 | `VENDEDOR` | Portal de ventas | Registra clientes y ventas, y consulta solo sus propias ventas |
 
@@ -54,12 +54,15 @@ Los permisos se aplican en dos niveles: `SecurityConfig` (reglas por ruta) y `@P
   - `TECNICO`: botón **Actualizar estado** en las solicitudes que tiene asignadas y no están finalizadas.
   - `ATENCION`: no tiene columna de acciones (asigna y cambia el estado desde los selectores de la tabla).
 - `ADMINISTRADOR` y `ATENCION` pueden asignar un técnico y cambiar el estado desde selectores en la propia tabla.
+- El selector de técnicos muestra cuántas solicitudes **pendientes** tiene cada uno (por ejemplo, `Ana Gómez (2 pendientes)`) y ordena la lista de menos a más carga, para asignar primero a quien tiene menos trabajo; a igual carga, por nombre. Una solicitud cuenta como pendiente si el técnico es su asignación vigente (la última) y todavía no está `FINALIZADA`; el historial de asignaciones anteriores no cuenta. La lista se vuelve a pedir en cada recarga de la tabla, así que los números se actualizan al asignar o al finalizar una solicitud.
+- Si el cambio de estado se hace desde el selector de estado de la tabla, la tabla no se recarga en ese momento: la carga de los técnicos se corrige en la próxima recarga (al asignar, buscar o refrescar).
 
 ### 3. Nueva solicitud
 
 - Se escribe el documento del cliente: si existe, se autocompletan sus datos (y se pueden corregir); si no, se crea un cliente nuevo.
-- Se ofrecen los productos que ese cliente ya compró, o se pueden buscar por marca, modelo, tipo y número de serie.
-- Antes de registrar se muestra el estado de la garantía del producto.
+- Un menú desplegable ofrece los productos que ese cliente ya compró (tipo, marca, modelo y número de serie), y cada opción indica si la garantía está vigente o vencida.
+- Antes de registrar se muestra el estado de la garantía del producto elegido.
+- Al elegir un producto también se listan las **facturas del cliente** (número, fecha, total y artículos), cada una con un enlace **Abrir factura** que muestra el PDF en una pestaña nueva. Si el número de serie del producto es de una venta del sistema (`VTA-{venta}-...`), la factura de esa compra aparece primera con la marca *COMPRA DE ESTE PRODUCTO*; los productos cargados de otra forma no tienen esa marca y solo se listan las facturas del cliente. Si el cliente no tiene facturas, se muestra un aviso.
 - Solo pueden registrar solicitudes `ADMINISTRADOR` y `ATENCION`.
 
 ### 4. Garantías
@@ -84,7 +87,8 @@ La garantía **no se guarda en una tabla**: se calcula siempre a partir de `prod
 
 - Desde el Portal de Ventas, al registrar una venta se descarga automáticamente una factura simple en PDF (`GET /api/ventas/{id}/factura`), generada con Apache PDFBox por `FacturaService`.
 - No es un comprobante fiscal timbrado por la SET: es un recibo de referencia con los datos de la venta (cliente, vendedor, artículos, cantidades y total).
-- El `VENDEDOR` solo puede descargar la factura de sus propias ventas; el `ADMINISTRADOR` puede descargar cualquiera.
+- El `VENDEDOR` solo puede descargar la factura de sus propias ventas; el `ADMINISTRADOR` y el `ATENCION` pueden abrir cualquiera (el `ATENCION` lo hace desde **Nueva solicitud**, ver más arriba).
+- Con `?abrir=true` el PDF se muestra en el navegador en lugar de descargarse; sin ese parámetro se descarga como archivo (es lo que usa el Portal de Ventas).
 - Las fuentes estándar (Helvetica) no soportan tildes/ñ, así que el texto se guarda sin diacríticos dentro del PDF.
 
 ### 8. Seguimiento público de una solicitud
@@ -271,6 +275,7 @@ Todas las rutas requieren sesión iniciada, salvo `/login.html`, `/login`, `/sty
 | `GET` | `/api/clientes` | Clientes que tienen al menos un producto | autenticado |
 | `GET` | `/api/clientes/buscar?documento=` | Busca un cliente por documento exacto (404 si no existe) | autenticado |
 | `GET` | `/api/clientes/{id}/productos` | Productos de un cliente | autenticado |
+| `GET` | `/api/clientes/{id}/facturas` | Facturas (ventas) de un cliente: número, fecha, total y artículos | `ADMINISTRADOR`, `ATENCION` |
 | `POST` | `/api/clientes` | Crea un cliente | `ADMINISTRADOR`, `ATENCION`, `VENDEDOR` |
 | `PUT` | `/api/clientes/{id}` | Actualiza nombre, teléfono y correo | `ADMINISTRADOR`, `ATENCION`, `VENDEDOR` |
 | `GET` | `/api/productos` | Lista de productos | autenticado |
@@ -285,7 +290,7 @@ Todas las rutas requieren sesión iniciada, salvo `/login.html`, `/login`, `/sty
 | `POST` | `/api/solicitudes/{id}/diagnostico` | Pasa a `EN DIAGNÓSTICO` (texto opcional) | `TECNICO` asignado |
 | `POST` | `/api/solicitudes/{id}/finalizar` | Finaliza la solicitud | `TECNICO` asignado |
 | `DELETE` | `/api/solicitudes/{id}` | Elimina la solicitud y su historial | `ADMINISTRADOR` |
-| `GET` | `/api/tecnicos` | Técnicos activos, para el selector de asignación | `ADMINISTRADOR`, `ATENCION` |
+| `GET` | `/api/tecnicos` | Técnicos activos con su cantidad de solicitudes pendientes, ordenados de menor a mayor carga | `ADMINISTRADOR`, `ATENCION` |
 | `GET` | `/api/usuarios` | Lista de usuarios | `ADMINISTRADOR` |
 | `POST` | `/api/usuarios` | Crea un usuario (`ATENCION`, `TECNICO` o `VENDEDOR`) | `ADMINISTRADOR` |
 | `GET` | `/api/articulos` | Catálogo de artículos activos | autenticado |
@@ -293,7 +298,7 @@ Todas las rutas requieren sesión iniciada, salvo `/login.html`, `/login`, `/sty
 | `PUT` | `/api/articulos/{id}/stock` | Ajusta el stock de un artículo | `ADMINISTRADOR` |
 | `GET` | `/api/ventas` | Ventas (todas para el administrador, solo las propias para el vendedor) | `VENDEDOR`, `ADMINISTRADOR` |
 | `POST` | `/api/ventas` | Registra una venta y descuenta stock | `VENDEDOR`, `ADMINISTRADOR` |
-| `GET` | `/api/ventas/{id}/factura` | Descarga la factura simple en PDF de la venta | `VENDEDOR` (propia), `ADMINISTRADOR` (cualquiera) |
+| `GET` | `/api/ventas/{id}/factura` | Factura simple en PDF de la venta (`?abrir=true` la muestra en el navegador en vez de descargarla) | `VENDEDOR` (propia), `ADMINISTRADOR` y `ATENCION` (cualquiera) |
 | `GET` | `/api/publico/seguimiento/{codigo}` | Estado y seguimiento de una solicitud por su `codigoPublico`, sin datos del cliente | público (sin login) |
 
 Autenticación de Spring Security: `POST /login` y `POST /logout`.
@@ -340,8 +345,8 @@ export DB_PASSWORD="tu_contrasena"
 1. Abrí <http://localhost:8080>; sin sesión te lleva al login.
 2. Iniciá sesión con uno de los usuarios de prueba.
 3. En el panel principal (`/index.html`) probá la búsqueda por documento y hacé clic en una fila para ver el detalle y el seguimiento.
-4. Con `ATENCION` o `ADMINISTRADOR`, entrá a **Nueva solicitud**, escribí el documento de un cliente, elegí uno de sus productos y revisá el estado de la garantía antes de registrar.
-5. Asigná un técnico desde la tabla; después iniciá sesión como `TECNICO` para actualizar el estado desde **Actualizar estado**.
+4. Con `ATENCION` o `ADMINISTRADOR`, entrá a **Nueva solicitud**, escribí el documento de un cliente, elegí uno de sus productos, revisá el estado de la garantía y abrí sus facturas con **Abrir factura** antes de registrar.
+5. Asigná un técnico desde la tabla (la lista muestra cuántas solicitudes pendientes tiene cada uno y ofrece primero a quien tiene menos); después iniciá sesión como `TECNICO` para actualizar el estado desde **Actualizar estado**.
 6. Con `VENDEDOR` o `ADMINISTRADOR`, probá una venta desde el **Portal de Ventas**.
 
 ---
@@ -368,6 +373,7 @@ export DB_PASSWORD="tu_contrasena"
 | No recuerdo la contraseña de un usuario | Restablecela con el SQL de la sección "Restablecer la contraseña de un usuario". |
 | Entro, pero no puedo crear, cambiar el estado o eliminar | El rol del usuario no permite esa acción. Los nombres de rol válidos son `ADMINISTRADOR`, `ATENCION`, `TECNICO` y `VENDEDOR`. |
 | El panel carga vacío | Hay que crear solicitudes desde **Nueva solicitud**; el respaldo no trae solicitudes cargadas. |
+| En Nueva solicitud aparece "Este cliente no tiene facturas registradas" | El cliente no tiene ventas asociadas en `venta.id_cliente` (por ejemplo, sus productos vienen del respaldo y no de una venta hecha desde el Portal de Ventas). |
 | El formulario no sugiere productos | La tabla `producto` está vacía: restaurá `db/ngo_ans.sql` o registrá una venta con cliente. |
 | Un técnico no ve el botón "Actualizar estado" | La solicitud no está asignada a ese técnico o ya está `FINALIZADA`. |
 | No se puede ejecutar `iniciar.ps1` | Política de ejecución de PowerShell: `Set-ExecutionPolicy -Scope Process RemoteSigned`. |
@@ -386,4 +392,5 @@ Prototipo académico con fines demostrativos, no preparado para producción. Lim
 - **Productos:** solo se generan a partir de ventas con cliente; no hay pantalla para crearlos ni editarlos. Su número de serie es interno (`VTA-...`), no el de fábrica.
 - **Artículos:** existe el endpoint para ajustar el stock (`PUT /api/articulos/{id}/stock`), pero la interfaz todavía no tiene un botón para usarlo, ni para editar o desactivar artículos. Como alternativa, se puede cargar stock nuevo por SQL (ver "Alta de artículos por SQL").
 - **Estados:** el cambio manual de estado hecho por `ADMINISTRADOR` o `ATENCION` no queda registrado en el seguimiento, y el backend no valida que el valor enviado sea uno de los cuatro estados oficiales.
+- **Facturas por producto:** el vínculo entre un producto y la factura de su compra se deduce del número de serie (`VTA-{venta}-...`); no hay una relación directa `producto` → `venta` en la base. Los productos que no vienen de una venta del sistema solo muestran la lista de facturas del cliente.
 - **Datos de ejemplo:** el respaldo incluye usuarios de prueba; esas cuentas y sus contraseñas deben reemplazarse antes de cualquier uso real.
