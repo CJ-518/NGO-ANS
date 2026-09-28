@@ -39,11 +39,24 @@ public class SeguimientoController {
     @Autowired
     private SeguimientoRepository seguimientoRepo;
 
-    // Historial de una solicitud (lo puede consultar cualquier usuario con sesión)
+    // Historial de una solicitud: lo puede consultar cualquier usuario con sesión, salvo el TECNICO,
+    // que solo ve el de las solicitudes que tiene asignadas.
     @GetMapping("/solicitudes/{id}/seguimiento")
-    public ResponseEntity<?> historial(@PathVariable Long id) {
+    public ResponseEntity<?> historial(@PathVariable Long id,
+                                       @AuthenticationPrincipal UsuarioPrincipal principal) {
         if (!solicitudRepo.existsById(id)) {
             return error(HttpStatus.NOT_FOUND, "La solicitud no existe.");
+        }
+        Usuario usuario = principal.getUsuario();
+        boolean esTecnico = usuario.getRol() != null && "TECNICO".equals(usuario.getRol().getNombre());
+        if (esTecnico) {
+            Asignacion vigente = asignacionRepo.findFirstBySolicitudIdSolicitudOrderByIdAsignacionDesc(id).orElse(null);
+            boolean esSuya = vigente != null
+                    && vigente.getUsuario() != null
+                    && vigente.getUsuario().getIdUsuario().equals(usuario.getIdUsuario());
+            if (!esSuya) {
+                return error(HttpStatus.FORBIDDEN, "Esta solicitud no está asignada a tu usuario.");
+            }
         }
         List<RegistroSeguimiento> registros = seguimientoRepo
                 .findBySolicitudIdSolicitudOrderByIdSeguimientoAsc(id).stream()

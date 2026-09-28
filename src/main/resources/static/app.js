@@ -332,7 +332,9 @@ async function abrirDetalle(id) {
         // Se consulta de nuevo para mostrar el estado más reciente
         const response = await fetch(`/api/solicitudes/${id}`);
         if (!response.ok) {
-            alert('No se pudo cargar la solicitud.');
+            alert(response.status === 403
+                ? 'Esta solicitud no está asignada a tu usuario.'
+                : 'No se pudo cargar la solicitud.');
             return;
         }
         const texto = await response.text();
@@ -350,6 +352,7 @@ async function abrirDetalle(id) {
 
         // Detalles (textContent evita interpretar HTML escrito por el usuario)
         document.getElementById('detalle-cliente').textContent = solicitud.cliente.nombre;
+        document.getElementById('detalle-telefono').textContent = solicitud.cliente.telefono || '—';
         document.getElementById('detalle-producto').textContent =
             `${solicitud.producto.marca} ${solicitud.producto.modelo} (SN: ${solicitud.producto.nroSerie})`;
         document.getElementById('detalle-descripcion').textContent = solicitud.descripcion;
@@ -410,7 +413,10 @@ async function cargarSolicitudes(documento = '') {
 
             if (data.length === 0) {
                 const columnas = tieneColumnaAcciones() ? 8 : 7;
-                tableBody.innerHTML = `<tr><td colspan="${columnas}">No se encontraron solicitudes para ese documento.</td></tr>`;
+                const vacio = documento
+                    ? 'No se encontraron solicitudes para ese documento.'
+                    : (rolActual === 'TECNICO' ? 'No tenés solicitudes asignadas.' : 'No hay solicitudes registradas.');
+                tableBody.innerHTML = `<tr><td colspan="${columnas}">${vacio}</td></tr>`;
                 return;
             }
 

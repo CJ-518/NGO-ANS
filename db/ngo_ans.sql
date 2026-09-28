@@ -2,12 +2,12 @@
 -- PostgreSQL database dump
 --
 
-\restrict x4kdfNAXZHxZAWjDZQIR73SijB3B9STzdJ3hyfvYyAQjioPheBckhdFaUIWS1Zm
+\restrict JgEzzLy2T6QcHADsD0h3zhd5Pqi1Qgcj6hgswarUDZGd4jvyYBnbynb4n5P0LEx
 
 -- Dumped from database version 18.6
 -- Dumped by pg_dump version 18.6
 
--- Started on 2026-09-28 19:40:55
+-- Started on 2026-09-28 19:58:00
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -669,8 +669,6 @@ COPY public.cliente (id_cliente, nombre, documento, telefono, correo) FROM stdin
 --
 
 COPY public.detalle_venta (id_detalle, id_venta, id_articulo, cantidad, precio_unitario, subtotal) FROM stdin;
-3	3	1	1	2750000.00	2750000.00
-4	4	5	1	2400000.00	2400000.00
 5	5	8	1	2460000.00	2460000.00
 6	6	9	1	6110000.00	6110000.00
 7	7	10	1	1890000.00	1890000.00
@@ -758,6 +756,8 @@ COPY public.detalle_venta (id_detalle, id_venta, id_articulo, cantidad, precio_u
 92	92	95	1	860000.00	860000.00
 93	93	96	1	2010000.00	2010000.00
 94	94	97	1	960000.00	960000.00
+3	95	1	1	2750000.00	2750000.00
+4	96	5	1	2400000.00	2400000.00
 \.
 
 
@@ -855,8 +855,8 @@ COPY public.producto (id_producto, marca, modelo, nro_serie, tipo_producto, id_c
 14	Philips	Airfryer XL	SN-FR-0001	Freidora de aire	7	2026-09-10	92
 44	Whirlpool	Carga Superior 12kg	SN-LA-0005	Lavarropas	5	2026-09-11	93
 73	Oster	Air Fryer Digital 4L	SN-FR-0004	Freidora de aire	4	2026-09-18	94
-92	Samsung	LED 43"	SN-TV-0013	Televisor	19	2026-09-25	4
-91	Samsung	Smart Fridge	SN-HE-0010	Heladera	18	2026-09-23	3
+91	Samsung	Smart Fridge	SN-HE-0010	Heladera	18	2026-09-23	95
+92	Samsung	LED 43"	SN-TV-0013	Televisor	19	2026-09-25	96
 \.
 
 
@@ -923,8 +923,8 @@ COPY public.usuario (id_usuario, id_rol, nombre, correo, clave, estado) FROM std
 --
 
 COPY public.venta (id_venta, id_vendedor, id_cliente, fecha, total) FROM stdin;
-3	1	18	2026-09-23 01:31:36.828519	2750000.00
-4	1	19	2026-09-25 17:25:55.112748	2400000.00
+95	1	18	2026-09-23 01:31:36.828519	2750000.00
+96	1	19	2026-09-25 17:25:55.112748	2400000.00
 5	10	8	2024-05-02 16:03:27	2460000.00
 6	8	10	2025-04-04 12:06:22	6110000.00
 7	8	9	2025-04-11 09:32:07	1890000.00
@@ -1102,7 +1102,7 @@ SELECT pg_catalog.setval('public.usuario_id_usuario_seq', 10, true);
 -- Name: venta_id_venta_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.venta_id_venta_seq', 94, true);
+SELECT pg_catalog.setval('public.venta_id_venta_seq', 96, true);
 
 
 --
@@ -1348,11 +1348,11 @@ ALTER TABLE ONLY public.venta
     ADD CONSTRAINT venta_id_vendedor_fkey FOREIGN KEY (id_vendedor) REFERENCES public.usuario(id_usuario);
 
 
--- Completed on 2026-09-28 19:40:55
+-- Completed on 2026-09-28 19:58:00
 
 --
 -- PostgreSQL database dump complete
 --
 
-\unrestrict x4kdfNAXZHxZAWjDZQIR73SijB3B9STzdJ3hyfvYyAQjioPheBckhdFaUIWS1Zm
+\unrestrict JgEzzLy2T6QcHADsD0h3zhd5Pqi1Qgcj6hgswarUDZGd4jvyYBnbynb4n5P0LEx
 

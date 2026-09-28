@@ -1,6 +1,7 @@
 package com.ngo.sistema;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -20,6 +21,9 @@ public class SistemaController {
 
     @Autowired
     private SolicitudRepository solicitudRepo;
+
+    @Autowired
+    private AsignacionRepository asignacionRepo;
 
     // Identidad del usuario logueado: id, nombre, correo y rol, para que app.js
     // pinte el header y muestre/oculte botones según el rol (y sepa cuáles son "sus" solicitudes).
@@ -103,23 +107,55 @@ public class SistemaController {
         return solicitudRepo.save(solicitud);
     }
 
+    // El TECNICO solo ve las solicitudes que tiene asignadas (su asignación vigente);
+    // el resto de los roles ve todas.
     @GetMapping("/solicitudes")
-    public List<Solicitud> listarSolicitudes() {
+    public List<Solicitud> listarSolicitudes(@AuthenticationPrincipal UsuarioPrincipal principal) {
+        if (esTecnico(principal)) {
+            return asignacionRepo.findSolicitudesAsignadasA(principal.getUsuario().getIdUsuario());
+        }
         return solicitudRepo.findAll();
     }
 
     @GetMapping("/solicitudes/buscar")
-    public List<Solicitud> buscarPorDocumento(@RequestParam String documento) {
+    public List<Solicitud> buscarPorDocumento(@RequestParam String documento,
+                                              @AuthenticationPrincipal UsuarioPrincipal principal) {
         String doc = documento.trim();
+        if (esTecnico(principal)) {
+            return doc.isEmpty()
+                    ? asignacionRepo.findSolicitudesAsignadasA(principal.getUsuario().getIdUsuario())
+                    : asignacionRepo.buscarSolicitudesAsignadasA(principal.getUsuario().getIdUsuario(), doc);
+        }
         if (doc.isEmpty()) {
             return solicitudRepo.findAll();
         }
         return solicitudRepo.findByClienteDocumentoContainingOrderByFechaDesc(doc);
     }
 
+    // El TECNICO solo puede abrir una solicitud que tenga asignada (403 si no es suya).
     @GetMapping("/solicitudes/{id}")
-    public Solicitud obtenerSolicitud(@PathVariable Long id) {
-        return solicitudRepo.findById(id).orElse(null);
+    public ResponseEntity<?> obtenerSolicitud(@PathVariable Long id,
+                                              @AuthenticationPrincipal UsuarioPrincipal principal) {
+        Solicitud solicitud = solicitudRepo.findById(id).orElse(null);
+        if (solicitud != null && esTecnico(principal) && !estaAsignadaA(id, principal)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(Map.of("error", "Esta solicitud no está asignada a tu usuario."));
+        }
+        return ResponseEntity.ok(solicitud);
+    }
+
+    private static boolean esTecnico(UsuarioPrincipal principal) {
+        return principal.getUsuario().getRol() != null
+                && "TECNICO".equals(principal.getUsuario().getRol().getNombre());
+    }
+
+    // La solicitud está asignada al usuario si su asignación vigente (la última) es la suya
+    private boolean estaAsignadaA(Long idSolicitud, UsuarioPrincipal principal) {
+        Asignacion vigente = asignacionRepo
+                .findFirstBySolicitudIdSolicitudOrderByIdAsignacionDesc(idSolicitud).orElse(null);
+        return vigente != null
+                && vigente.getUsuario() != null
+                && vigente.getUsuario().getIdUsuario().equals(principal.getUsuario().getIdUsuario());
     }
 
     @PreAuthorize("hasRole('ADMINISTRADOR')")
