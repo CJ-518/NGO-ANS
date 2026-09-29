@@ -12,13 +12,16 @@ import java.math.BigDecimal;
 @Table(name = "articulo")
 public class Articulo {
 
+    // Clave primaria autogenerada (columna IDENTITY de PostgreSQL).
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long idArticulo;
 
+    // Nombre comercial: se muestra en el catálogo, en el carrito y en la factura (obligatorio).
     @Column(nullable = false, length = 100)
     private String nombre;
 
+    // Descripción libre. El portal de ventas la muestra como tooltip sobre el nombre.
     @Column(length = 255)
     private String descripcion;
 
@@ -33,12 +36,16 @@ public class Articulo {
     @Column(length = 50)
     private String modelo;
 
+    // Precio unitario en guaraníes. Se usa BigDecimal (no double) para no perder precisión en dinero.
     @Column(nullable = false, precision = 10, scale = 2)
     private BigDecimal precio;
 
+    // Unidades disponibles. Se descuenta dentro de la transacción de la venta
+    // (VentaController#registrarVenta) y nunca puede ser negativo (CHECK en la base).
     @Column(nullable = false)
     private Integer stock = 0;
 
+    // Estado del artículo: solo los ACTIVO aparecen en el catálogo (ver ArticuloRepository).
     @Column(length = 30)
     private String estado = "ACTIVO";
 

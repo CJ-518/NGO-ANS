@@ -6,10 +6,15 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Venta registrada desde el Portal de Ventas (equivale a una factura). Contiene sus renglones
+ * ({@link DetalleVenta}) y, si se vendió a un cliente registrado, el {@link Cliente}.
+ */
 @Entity
 @Table(name = "venta")
 public class Venta {
 
+    // Clave primaria autogenerada. Es el número de factura.
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long idVenta;
@@ -24,12 +29,16 @@ public class Venta {
     @JoinColumn(name = "id_cliente")
     private Cliente cliente;
 
+    // Fecha y hora de la venta: la completa la base (DEFAULT CURRENT_TIMESTAMP).
     @Column(insertable = false, updatable = false)
     private LocalDateTime fecha;
 
+    // Total de la venta = suma de los subtotales de sus detalles.
     @Column(nullable = false, precision = 12, scale = 2)
     private BigDecimal total = BigDecimal.ZERO;
 
+    // Renglones de la venta. cascade = ALL: al guardar la venta se guardan sus detalles;
+    // orphanRemoval: un detalle quitado de la lista se borra de la base.
     @OneToMany(mappedBy = "venta", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<DetalleVenta> detalles = new ArrayList<>();
 

@@ -5,6 +5,9 @@ import org.springframework.data.jpa.repository.Query;
 import java.util.List;
 import java.util.Optional;
 
+/**
+ * Acceso a datos de {@link Cliente}.
+ */
 public interface ClienteRepository extends JpaRepository<Cliente, Long> {
 
     // Se usa para autocompletar los datos del cliente en "Nueva solicitud" y en el Portal de Ventas.

@@ -5,9 +5,12 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import java.util.List;
 
+/**
+ * Acceso a datos de {@link Producto}.
+ */
 public interface ProductoRepository extends JpaRepository<Producto, Long> {
 
-    // Ya no se busca a través de Garantia: el cliente vive directamente en el producto.
+    // El cliente vive directamente en el producto, así que se busca sin pasar por otra tabla.
     // Se usa en "Nueva solicitud" para ofrecer los productos que ese cliente ya compró.
     List<Producto> findByClienteIdClienteOrderByFechaVentaDesc(Long idCliente);
 

@@ -1,8 +1,17 @@
+// Lógica del panel principal (index.html): listado de solicitudes, búsqueda por documento,
+// detalle con línea de tiempo y seguimiento, asignación de técnicos, cambio de estado y
+// eliminación. Qué botones y columnas se ven depende del rol del usuario logueado.
+
+// Estado de la página: rol e id del usuario logueado (los completa cargarUsuarioActual).
 let rolActual = null;
 let idUsuarioActual = null;
 let tecnicos = []; // técnicos activos, para el selector de asignación
 let codigoPublicoActual = null; // de la solicitud que está abierta en el modal de detalle
 
+/**
+ * Consulta /api/usuario/actual y ajusta la pantalla según el rol:
+ * muestra u oculta los botones "Nueva solicitud", "Usuarios" y "Portal de Ventas" y la columna "Acciones".
+ */
 async function cargarUsuarioActual() {
     try {
         const res = await fetch('/api/usuario/actual');
@@ -43,10 +52,12 @@ async function cargarUsuarioActual() {
     }
 }
 
+// Inicialización: primero se averigua el rol y recién después se pinta la tabla y se registran los eventos.
 document.addEventListener('DOMContentLoaded', async () => {
     await cargarUsuarioActual(); // hay que esperar a saber el rol ANTES de pintar la tabla
     cargarSolicitudes();
 
+    // Buscador por documento: filtra mientras se escribe (con una pausa de 300 ms para no saturar al servidor).
     const inputDoc = document.getElementById('buscar-documento');
     let timer;
 
@@ -109,11 +120,25 @@ function tieneColumnaAcciones() {
 
 // ---------- Ventana "Actualizar estado" (TECNICO) ----------
 
+// Id de la solicitud que se está actualizando en la ventana "Actualizar estado".
 let avanceIdSolicitud = null;
 
+/**
+ * Devuelve el número de solicitud (ej. 28092026-01) que se muestra en la primera columna de la fila
+ * de la tabla. Los botones solo conocen el id interno, así que el número se toma de la fila.
+ * Si la fila no está en pantalla devuelve el id con "#" como respaldo.
+ */
+function numeroDeFila(id) {
+    const celda = document.querySelector(`tr.fila-solicitud[data-id="${id}"] td`);
+    return celda ? celda.textContent.trim() : `#${id}`;
+}
+
+/**
+ * Abre la ventana "Actualizar estado" (uso del TECNICO) para la solicitud indicada.
+ */
 function abrirAvance(id) {
     avanceIdSolicitud = id;
-    document.getElementById('avance-titulo').textContent = `Actualizar estado de ST-${id}`;
+    document.getElementById('avance-titulo').textContent = `Actualizar estado de la solicitud ${numeroDeFila(id)}`;
     document.getElementById('avance-estado').value = 'EN DIAGNÓSTICO';
     document.getElementById('avance-diagnostico').value = '';
     document.getElementById('avance-mensaje').style.display = 'none';
@@ -121,6 +146,9 @@ function abrirAvance(id) {
     document.getElementById('modal-avance').style.display = 'flex';
 }
 
+/**
+ * Cierra la ventana "Actualizar estado".
+ */
 function cerrarAvance() {
     document.getElementById('modal-avance').style.display = 'none';
     avanceIdSolicitud = null;
@@ -132,12 +160,20 @@ function actualizarCajaDiagnostico() {
     document.getElementById('avance-diagnostico-caja').style.display = esDiagnostico ? 'block' : 'none';
 }
 
+/**
+ * Muestra un mensaje de error dentro de la ventana "Actualizar estado".
+ */
 function mostrarMensajeAvance(texto) {
     const caja = document.getElementById('avance-mensaje');
     caja.textContent = texto;
     caja.style.display = 'block';
 }
 
+/**
+ * Envía el cambio de estado del técnico: POST /diagnostico (con texto opcional) o /finalizar.
+ * Al finalizar pide confirmación porque después ya no se puede cambiar.
+ * Si el servidor responde 403 o 409 se recarga la tabla, porque los datos estaban desactualizados.
+ */
 async function guardarAvance() {
     const id = avanceIdSolicitud;
     if (!id) return;
@@ -145,7 +181,7 @@ async function guardarAvance() {
     const estado = document.getElementById('avance-estado').value;
     const finaliza = estado === 'FINALIZADA';
 
-    if (finaliza && !confirm(`¿Finalizar la solicitud ST-${id}?\n\nUna vez finalizada, ya no podrás cambiar su estado.`)) {
+    if (finaliza && !confirm(`¿Finalizar la solicitud ${numeroDeFila(id)}?\n\nUna vez finalizada, ya no podrás cambiar su estado.`)) {
         return;
     }
 
@@ -186,6 +222,10 @@ async function guardarAvance() {
 
 // ---------- Seguimiento (historial) en el detalle ----------
 
+/**
+ * Arma el bloque HTML de un registro del historial (estado, fecha, quién lo hizo y diagnóstico).
+ * Usa textContent para que el texto de la base nunca se interprete como HTML.
+ */
 function dibujarRegistro(registro) {
     const bloque = document.createElement('div');
     bloque.style.cssText = 'padding: 8px 0; border-bottom: 1px solid #e2e8f0;';
@@ -208,6 +248,9 @@ function dibujarRegistro(registro) {
     return bloque;
 }
 
+/**
+ * Carga el historial de la solicitud (GET /api/solicitudes/{id}/seguimiento) en el detalle.
+ */
 async function cargarSeguimiento(id) {
     const caja = document.getElementById('detalle-seguimiento');
     try {
@@ -232,6 +275,10 @@ function escaparHtml(texto) {
         .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 }
 
+/**
+ * Carga la lista de técnicos activos con su cantidad de pendientes (GET /api/tecnicos).
+ * Si falla queda una lista vacía.
+ */
 async function cargarTecnicos() {
     try {
         const res = await fetch('/api/tecnicos');
@@ -243,6 +290,10 @@ async function cargarTecnicos() {
     }
 }
 
+/**
+ * Asigna un técnico a una solicitud (POST /api/solicitudes/{id}/asignar) y recarga la tabla,
+ * que refleja el técnico y el nuevo estado (RECIBIDA pasa a ASIGNADA).
+ */
 async function asignarTecnico(idSolicitud, idTecnico) {
     const filtro = document.getElementById('buscar-documento').value;
 
@@ -271,9 +322,13 @@ async function asignarTecnico(idSolicitud, idTecnico) {
     cargarSolicitudes(filtro);
 }
 
+/**
+ * Elimina una solicitud (solo ADMINISTRADOR) después de pedir confirmación.
+ * También se borran sus asignaciones y su seguimiento.
+ */
 async function eliminarSolicitud(id) {
     const confirmado = confirm(
-        `¿Eliminar la solicitud ST-${id}?\n\n` +
+        `¿Eliminar la solicitud ${numeroDeFila(id)}?\n\n` +
         'También se borrarán sus asignaciones y su historial de seguimiento. ' +
         'Esta acción no se puede deshacer.'
     );
@@ -303,6 +358,9 @@ async function eliminarSolicitud(id) {
     }
 }
 
+/**
+ * Cierra la ventana de detalle de la solicitud.
+ */
 function cerrarDetalle() {
     document.getElementById('modal-detalle').style.display = 'none';
 }
@@ -327,6 +385,11 @@ async function copiarLinkSeguimiento() {
     }
 }
 
+/**
+ * Abre el detalle de una solicitud: vuelve a consultarla para mostrar el dato más reciente y completa
+ * los datos, la línea de tiempo y el seguimiento.
+ * @param {string|number} id número de la solicitud
+ */
 async function abrirDetalle(id) {
     try {
         // Se consulta de nuevo para mostrar el estado más reciente
@@ -345,7 +408,7 @@ async function abrirDetalle(id) {
         const solicitud = JSON.parse(texto);
 
         // Datos básicos
-        document.getElementById('detalle-titulo').innerText = `Solicitud ST-${solicitud.idSolicitud}`;
+        document.getElementById('detalle-titulo').innerText = `Solicitud ${solicitud.numero}`;
         document.getElementById('estado-actual').innerText = solicitud.estadoActual;
         document.getElementById('fecha-actualizacion').innerText =
             new Date(solicitud.fecha).toLocaleString('es-PY');
@@ -366,6 +429,7 @@ async function abrirDetalle(id) {
         steps.forEach(s => s.classList.remove('active'));
         lines.forEach(l => l.classList.remove('active'));
 
+        // Posición de cada estado en la línea de tiempo (0 = Recibida ... 3 = Finalizada).
         const estadosMap = {
             'RECIBIDA': 0,
             'ASIGNADA': 1,
@@ -388,6 +452,12 @@ async function abrirDetalle(id) {
     }
 }
 
+/**
+ * Trae las solicitudes (todas, o filtradas por documento) y dibuja la tabla.
+ * El contenido de cada fila depende del rol: ADMINISTRADOR/ATENCION ven selectores de estado y técnico;
+ * el TECNICO ve solo sus solicitudes y el botón "Actualizar estado"; el ADMINISTRADOR además ve "Eliminar".
+ * @param {string} [documento=""] filtro por número de documento del cliente
+ */
 async function cargarSolicitudes(documento = '') {
     const url = documento
         ? `/api/solicitudes/buscar?documento=${encodeURIComponent(documento)}`
@@ -400,6 +470,7 @@ async function cargarSolicitudes(documento = '') {
         await cargarTecnicos();
     }
 
+    // Se piden las solicitudes y se dibuja una fila por cada una.
     fetch(url)
         .then(response => response.json())
         .then(data => {
@@ -433,7 +504,7 @@ async function cargarSolicitudes(documento = '') {
 
                 let estadoHtml;
                 if (puedeCambiarEstado) {
-                    // Generar el menú desplegable (Se agregó 'this' al onchange)
+                    // Menú desplegable de estados: 'this' permite que actualizarEstado ilumine el selector al guardar
                     let selectHtml = `<select class="estado-select" onchange="actualizarEstado(${solicitud.idSolicitud}, this.value, this)">`;
                     estados.forEach(est => {
                         let isSelected = (est === solicitud.estadoActual) ? 'selected' : '';
@@ -483,8 +554,10 @@ async function cargarSolicitudes(documento = '') {
                         : '<td></td>';
                 }
 
+                // NOTA: nombre y documento del cliente y el tipo de producto se insertan como HTML sin escapar
+                // (el nombre del técnico sí pasa por escaparHtml). Conviene escaparlos también con escaparHtml().
                 const row = `<tr class="fila-solicitud" data-id="${solicitud.idSolicitud}">
-                    <td>ST-${solicitud.idSolicitud}</td>
+                    <td>${solicitud.numero}</td>
                     <td>${solicitud.cliente.nombre}</td>
                     <td>${solicitud.cliente.documento}</td>
                     <td>${solicitud.producto.tipoProducto}</td>
@@ -499,7 +572,12 @@ async function cargarSolicitudes(documento = '') {
         .catch(error => console.error('Error fetching data:', error));
 }
 
-// Función global (Se agregó selectElement como parámetro)
+/**
+ * Cambia el estado desde el selector de la tabla (PUT /api/solicitudes/{id}/estado).
+ * Es global (window) porque se invoca desde el atributo onchange del HTML generado.
+ * Si el cambio se guarda, el selector se ilumina un segundo en verde claro.
+ */
+// Función global; recibe el selector (selectElement) para poder iluminarlo cuando el cambio se guarda
 window.actualizarEstado = async function(id, nuevoEstado, selectElement) {
     try {
         const response = await fetch(`/api/solicitudes/${id}/estado`, {
@@ -511,7 +589,7 @@ window.actualizarEstado = async function(id, nuevoEstado, selectElement) {
         if (response.ok) {
             console.log(`Solicitud ${id} actualizada a ${nuevoEstado}`);
 
-            // Animación visual corregida
+            // Animación visual: el selector se ilumina un segundo
             selectElement.style.backgroundColor = '#e6fffa'; // Verde claro
             setTimeout(() => selectElement.style.backgroundColor = 'white', 1000); // Vuelve a blanco
         } else if (response.status === 403) {

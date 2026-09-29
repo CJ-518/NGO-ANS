@@ -3,21 +3,29 @@ package com.ngo.sistema;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 
+/**
+ * Usuario del sistema (personal interno: administrador, atención, técnico o vendedor).
+ * El correo es el nombre de usuario para iniciar sesión.
+ */
 @Entity
 @Table(name = "usuario")
 public class Usuario {
 
+    // Clave primaria autogenerada.
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long idUsuario;
 
+    // Rol del usuario (FK id_rol). Define qué puede hacer en el sistema.
     @ManyToOne
     @JoinColumn(name = "id_rol", nullable = false)
     private Rol rol;
 
+    // Nombre y apellido que se muestra en el encabezado y en los selectores de técnicos.
     @Column(nullable = false, length = 100)
     private String nombre;
 
+    // Correo electrónico: es único y actúa como nombre de usuario en el login.
     @Column(nullable = false, unique = true, length = 100)
     private String correo;
 
@@ -27,6 +35,7 @@ public class Usuario {
     @Column(nullable = false, length = 255)
     private String clave;
 
+    // ACTIVO o INACTIVO. Solo un usuario ACTIVO puede iniciar sesión (ver UsuarioPrincipal#isEnabled).
     @Column(length = 30)
     private String estado = "ACTIVO";
 

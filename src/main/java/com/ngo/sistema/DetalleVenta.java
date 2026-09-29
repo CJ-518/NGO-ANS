@@ -4,10 +4,14 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import java.math.BigDecimal;
 
+/**
+ * Renglón de una {@link Venta}: un artículo, su cantidad, el precio al momento de vender y el subtotal.
+ */
 @Entity
 @Table(name = "detalle_venta")
 public class DetalleVenta {
 
+    // Clave primaria autogenerada.
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long idDetalle;
@@ -19,10 +23,12 @@ public class DetalleVenta {
     @JoinColumn(name = "id_venta", nullable = false)
     private Venta venta;
 
+    // Artículo vendido (FK id_articulo).
     @ManyToOne
     @JoinColumn(name = "id_articulo", nullable = false)
     private Articulo articulo;
 
+    // Cantidad de unidades vendidas (siempre mayor a 0: CHECK en la base).
     @Column(nullable = false)
     private Integer cantidad;
 
@@ -30,6 +36,7 @@ public class DetalleVenta {
     @Column(name = "precio_unitario", nullable = false, precision = 10, scale = 2)
     private BigDecimal precioUnitario;
 
+    // Subtotal del renglón = precioUnitario × cantidad.
     @Column(nullable = false, precision = 12, scale = 2)
     private BigDecimal subtotal;
 

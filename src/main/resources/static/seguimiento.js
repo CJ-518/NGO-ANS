@@ -3,6 +3,7 @@
 // /api/publico/seguimiento/{codigo}, que es de solo lectura y no expone datos
 // del cliente ni de quién atendió cada paso.
 
+// Posición de cada estado en la línea de tiempo: 0 = Recibida ... 3 = Finalizada.
 const ESTADOS_MAP = {
     'RECIBIDA': 0,
     'ASIGNADA': 1,
@@ -10,6 +11,10 @@ const ESTADOS_MAP = {
     'FINALIZADA': 3
 };
 
+/**
+ * Oculta el "cargando" y el contenido y muestra el cuadro de error.
+ * @param {string} [mensaje] Texto a mostrar; si se omite queda el mensaje por defecto del HTML.
+ */
 function mostrarError(mensaje) {
     document.getElementById('seguimiento-cargando').style.display = 'none';
     document.getElementById('seguimiento-contenido').style.display = 'none';
@@ -20,6 +25,12 @@ function mostrarError(mensaje) {
     errorBox.style.display = 'block';
 }
 
+/**
+ * Arma el bloque HTML de un paso del historial (estado, fecha y diagnóstico si lo hay).
+ * Usa textContent para que el texto de la base nunca se interprete como HTML.
+ * @param {{estado: string, fecha: string, diagnostico: ?string}} registro
+ * @returns {HTMLElement}
+ */
 function dibujarRegistro(registro) {
     const bloque = document.createElement('div');
     bloque.style.cssText = 'padding: 8px 0; border-bottom: 1px solid #e2e8f0;';
@@ -41,6 +52,10 @@ function dibujarRegistro(registro) {
     return bloque;
 }
 
+/**
+ * Lee el código de la URL (?codigo=...), consulta /api/publico/seguimiento/{codigo} y completa la
+ * página: estado actual, línea de tiempo, datos del producto e historial.
+ */
 async function cargarEstado() {
     const codigo = new URLSearchParams(window.location.search).get('codigo');
     if (!codigo) {
@@ -56,7 +71,7 @@ async function cargarEstado() {
         }
         const solicitud = await res.json();
 
-        document.getElementById('detalle-titulo').innerText = `Solicitud ST-${solicitud.idSolicitud}`;
+        document.getElementById('detalle-titulo').innerText = `Solicitud ${solicitud.numero}`;
         document.getElementById('estado-actual').innerText = solicitud.estadoActual;
         document.getElementById('fecha-actualizacion').innerText =
             new Date(solicitud.fecha).toLocaleString('es-PY');
@@ -72,6 +87,7 @@ async function cargarEstado() {
         const estadoActual = solicitud.estadoActual.toUpperCase();
         const limite = ESTADOS_MAP[estadoActual] !== undefined ? ESTADOS_MAP[estadoActual] : 0;
 
+        // Marca como activos los pasos hasta el estado actual y las líneas que los unen.
         for (let i = 0; i <= limite; i++) {
             if (steps[i]) steps[i].classList.add('active');
             if (i < limite && lines[i]) lines[i].classList.add('active');
@@ -93,4 +109,5 @@ async function cargarEstado() {
     }
 }
 
+// Al cargar la página se consulta el estado de inmediato.
 cargarEstado();

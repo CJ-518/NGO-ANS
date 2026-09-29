@@ -1,3 +1,9 @@
+// Lógica de "Nueva solicitud" (nueva-solicitud.html). Flujo:
+//   1) se escribe el documento del cliente (con sugerencias de clientes que ya tienen productos);
+//   2) si el cliente existe se completan sus datos y se cargan sus productos con el estado de la garantía;
+//   3) al elegir un producto se muestran la garantía y un enlace a la factura de su compra;
+//   4) al enviar se guarda/actualiza el cliente (paso A) y se registra la solicitud (paso B).
+
 let clientes = [];               // Todos los clientes registrados (para sugerir documentos)
 let clienteEncontrado = null;    // Cliente existente que coincide con el documento escrito (o null si es nuevo)
 let productosCliente = [];       // Productos que ya le vendimos a ese cliente
@@ -8,11 +14,13 @@ let indiceActivoDocumento = -1;  // Opción resaltada con el teclado en la lista
 let busquedaActual = 0;          // Identifica la búsqueda de cliente vigente, para descartar respuestas viejas
 let documentoBuscado = null;     // Último documento ya buscado: evita repetir la búsqueda (y rearmar el menú) si no cambió
 
+// Normaliza un texto para comparar: sin espacios en los extremos y en minúsculas.
 const normalizar = (texto) => (texto || '').trim().toLowerCase();
 const selectProducto = document.getElementById('producto');
 
 // ---------- Carga inicial y eventos ----------
 
+// Carga inicial: trae los clientes (para las sugerencias) y registra los eventos de la pantalla.
 (async function iniciar() {
     try {
         const res = await fetch('/api/clientes');
@@ -116,12 +124,18 @@ function mostrarSugerenciasDocumento(texto) {
     contenedor.style.display = 'block';
 }
 
+/**
+ * Se eligió una sugerencia: completa el documento, cierra la lista y busca al cliente.
+ */
 function elegirSugerenciaDocumento(cliente) {
     document.getElementById('documento').value = cliente.documento;
     ocultarSugerenciasDocumento();
     buscarCliente();
 }
 
+/**
+ * Cierra y vacía la lista de sugerencias.
+ */
 function ocultarSugerenciasDocumento() {
     const contenedor = document.getElementById('sugerencias-documento');
     contenedor.replaceChildren();
@@ -129,12 +143,20 @@ function ocultarSugerenciasDocumento() {
     indiceActivoDocumento = -1;
 }
 
+/**
+ * Resalta la sugerencia seleccionada con el teclado (flechas arriba/abajo).
+ */
 function resaltarSugerenciaActiva(items) {
     items.forEach((item, i) => item.classList.toggle('activo', i === indiceActivoDocumento));
 }
 
 // ---------- Cliente: autocompletar datos y productos que ya compró ----------
 
+/**
+ * Busca al cliente por el documento escrito (GET /api/clientes/buscar):
+ * si existe completa sus datos y carga sus productos; si no (404) lo trata como cliente nuevo.
+ * Usa "busquedaActual" para descartar respuestas viejas si el usuario cambió el documento mientras esperaba.
+ */
 async function buscarCliente() {
     const documento = document.getElementById('documento').value.trim();
 
@@ -183,6 +205,9 @@ async function buscarCliente() {
     }
 }
 
+/**
+ * Muestra el aviso "Cliente encontrado" (true), "Cliente nuevo" (false) u oculta el aviso (null).
+ */
 function mostrarEstadoCliente(encontrado) {
     const caja = document.getElementById('cliente-estado');
 
@@ -203,6 +228,10 @@ function mostrarEstadoCliente(encontrado) {
     }
 }
 
+/**
+ * Trae los productos del cliente y la garantía de cada uno (en paralelo) y arma el menú desplegable.
+ * Si tiene un solo producto, queda elegido automáticamente.
+ */
 async function cargarProductosDelCliente(idCliente, busqueda) {
     let lista = [];
     try {
@@ -242,8 +271,12 @@ async function cargarProductosDelCliente(idCliente, busqueda) {
 
 // ---------- Menú desplegable de productos ----------
 
+// True si la garantía del producto está VIGENTE.
 const esVigente = (garantia) => garantia && garantia.estado === 'VIGENTE';
 
+/**
+ * Texto corto que se muestra junto a cada producto del menú ("En garantía" / "Garantía vencida").
+ */
 function etiquetaGarantia(garantia) {
     if (!garantia) return 'Garantía sin datos';
     return esVigente(garantia) ? '✔ En garantía' : '✖ Garantía vencida';
@@ -287,6 +320,9 @@ function pintarProductos(mensajeVacio) {
 
 // ---------- Producto elegido y garantía ----------
 
+/**
+ * Muestra el detalle del producto elegido (garantía y factura de su compra), o lo oculta si es null.
+ */
 function mostrarProducto(producto) {
     productoSeleccionado = producto;
 
@@ -308,8 +344,6 @@ function mostrarProducto(producto) {
 
 // ---------- Factura del producto elegido ----------
 //
-// ---------- Factura del producto elegido ----------
-//
 // Al elegir un producto se muestra únicamente la factura de SU compra, con un enlace que abre el PDF
 // en una pestaña nueva. El servidor la obtiene de la venta asociada al producto (GET /api/productos/{id}/factura,
 // relación producto.id_venta). Si el producto no tiene venta, se avisa en vez de listar otras facturas.
@@ -323,6 +357,10 @@ function crearContenedorFactura() {
     return contenedor;
 }
 
+/**
+ * Pide la factura del producto (GET /api/productos/{id}/factura) y la dibuja en el contenedor.
+ * Se guarda en caché en "facturasProducto" y se ignora si el usuario ya eligió otro producto.
+ */
 async function cargarFactura(producto, contenedor) {
     const id = producto.idProducto;
 
@@ -358,12 +396,19 @@ async function cargarFactura(producto, contenedor) {
     contenedor.replaceChildren(contenedor.firstChild, dibujarFactura(factura));
 }
 
+/**
+ * Línea de texto gris para avisos de la factura ("Buscando...", "No se encontró...").
+ */
 function mensajeFactura(texto) {
     const vacio = linea(texto);
     vacio.style.cssText = 'margin-top: 6px; color: #4a5568;';
     return vacio;
 }
 
+/**
+ * Dibuja el resumen de la factura (número, fecha, total, detalle) con un enlace que abre el PDF
+ * en una pestaña nueva (/api/ventas/{id}/factura?abrir=true).
+ */
 function dibujarFactura(factura) {
     const fila = document.createElement('div');
     fila.style.cssText = 'display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 8px 0;';
@@ -390,6 +435,9 @@ function dibujarFactura(factura) {
     return fila;
 }
 
+/**
+ * Dibuja las fechas de venta y fin de garantía con una insignia verde (vigente) o roja (vencida).
+ */
 function dibujarGarantia(caja, garantia) {
     if (!garantia) {
         caja.replaceChildren(linea('No se pudo consultar la garantía del producto.'));
@@ -410,6 +458,9 @@ function dibujarGarantia(caja, garantia) {
     caja.replaceChildren(fila);
 }
 
+/**
+ * Crea un <div> con texto plano.
+ */
 function linea(texto) {
     const div = document.createElement('div');
     div.textContent = texto;
@@ -423,12 +474,18 @@ function fechaLocal(valor) {
     return new Date(anio, mes - 1, dia);
 }
 
+/**
+ * Formatea una fecha al estilo local de Paraguay (dd/mm/aaaa).
+ */
 function formatear(fecha) {
     return fecha.toLocaleDateString('es-PY');
 }
 
 // ---------- Registro de la solicitud ----------
 
+// Registro de la solicitud. Exige un producto elegido y luego hace dos pasos:
+// A) guardar el cliente (PUT si ya existe, POST si es nuevo);
+// B) crear la solicitud con el cliente y el producto (POST /api/solicitudes). Al terminar vuelve al panel.
 document.getElementById('solicitud-form').addEventListener('submit', async function(event) {
     event.preventDefault(); // Evita el envío estándar del formulario
 
@@ -486,7 +543,7 @@ document.getElementById('solicitud-form').addEventListener('submit', async funct
         if (!solicitudRes.ok) throw new Error('No se pudo guardar la solicitud (HTTP ' + solicitudRes.status + ')');
         const solicitudSalvada = await solicitudRes.json();
 
-        alert(`¡Éxito! Solicitud registrada con el número ST-${solicitudSalvada.idSolicitud}`);
+        alert(`¡Éxito! Solicitud registrada con el número ${solicitudSalvada.numero}`);
         window.location.href = 'index.html';
 
     } catch (error) {

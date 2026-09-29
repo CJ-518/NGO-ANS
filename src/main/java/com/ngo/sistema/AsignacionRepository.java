@@ -6,6 +6,10 @@ import org.springframework.data.repository.query.Param;
 import java.util.List;
 import java.util.Optional;
 
+/**
+ * Acceso a datos de {@link Asignacion}. Las consultas @Query usan JPQL (sobre entidades, no sobre tablas).
+ * La "asignación vigente" de una solicitud es la de mayor idAsignacion (subconsulta con MAX).
+ */
 public interface AsignacionRepository extends JpaRepository<Asignacion, Long> {
 
     // Última asignación de una solicitud (la vigente)

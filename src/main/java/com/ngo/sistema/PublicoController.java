@@ -28,10 +28,17 @@ public class PublicoController {
     @Autowired
     private SeguimientoRepository seguimientoRepo;
 
+    /**
+     * Un paso del historial visible para el cliente (sin el nombre de quien lo hizo).
+     */
     public record PasoSeguimiento(LocalDateTime fecha, String estado, String diagnostico) {}
 
+    /**
+     * Respuesta pública con solo lo que le sirve al cliente: número de solicitud, estado,
+     * descripción, datos del producto e historial.
+     */
     public record EstadoSolicitud(
-            Long idSolicitud,
+            String numero,
             LocalDateTime fecha,
             String estadoActual,
             String descripcion,
@@ -40,6 +47,10 @@ public class PublicoController {
             String productoTipo,
             List<PasoSeguimiento> historial) {}
 
+    /**
+     * GET /api/publico/seguimiento/{codigo}: devuelve el estado de una solicitud a partir de su código público.
+     * No requiere sesión (ver SecurityConfig). Responde 404 si el código no existe.
+     */
     @GetMapping("/seguimiento/{codigo}")
     public ResponseEntity<?> consultar(@PathVariable String codigo) {
         Solicitud solicitud = solicitudRepo.findByCodigoPublico(codigo).orElse(null);
@@ -54,7 +65,7 @@ public class PublicoController {
                 .toList();
 
         EstadoSolicitud respuesta = new EstadoSolicitud(
-                solicitud.getIdSolicitud(),
+                solicitud.getNumero(),
                 solicitud.getFecha(),
                 solicitud.getEstadoActual(),
                 solicitud.getDescripcion(),
