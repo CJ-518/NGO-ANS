@@ -21,4 +21,12 @@ public interface SolicitudRepository extends JpaRepository<Solicitud, Long> {
     // cuál es el siguiente número de ese día.
     @Query("select s.numero from Solicitud s where s.numero like concat(:prefijo, '%')")
     List<String> findNumerosConPrefijo(@Param("prefijo") String prefijo);
+
+    // Solicitudes que todavía esperan técnico: no tienen ninguna asignación y siguen en espera
+    // (RECIBIDA o ASIGNADA). Las más antiguas primero, para atenderlas en orden de llegada.
+    @Query("select s from Solicitud s " +
+           "where s.estadoActual in ('RECIBIDA', 'ASIGNADA') " +
+           "and not exists (select a from Asignacion a where a.solicitud = s) " +
+           "order by s.fecha asc, s.idSolicitud asc")
+    List<Solicitud> findSinAsignar();
 }

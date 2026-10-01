@@ -56,6 +56,7 @@ Los permisos se aplican en dos niveles: `SecurityConfig` (reglas por ruta) y `@P
   - `ATENCION`: no tiene columna de acciones (asigna y cambia el estado desde los selectores de la tabla).
 - `ADMINISTRADOR` y `ATENCION` pueden asignar un técnico y cambiar el estado desde selectores en la propia tabla.
 - El selector de técnicos muestra cuántas solicitudes **pendientes** tiene cada uno (por ejemplo, `Ana Gómez (2 pendientes)`) y ordena la lista de menos a más carga, para asignar primero a quien tiene menos trabajo; a igual carga, por nombre. Una solicitud cuenta como pendiente si el técnico es su asignación vigente (la última) y todavía no está `FINALIZADA`; el historial de asignaciones anteriores no cuenta. La lista se vuelve a pedir en cada recarga de la tabla, así que los números se actualizan al asignar o al finalizar una solicitud.
+- El botón **Autoasignar solicitudes** (visible para `ADMINISTRADOR` y `ATENCION`, junto a **Nueva solicitud**) reparte de una vez todas las solicitudes que todavía no tienen técnico. Se considera "sin asignar" a la solicitud que no tiene ninguna asignación y sigue en espera (`RECIBIDA` o `ASIGNADA`). Las asigna **una por una, de la más antigua a la más nueva**: para cada una consulta cuántas pendientes tiene cada técnico activo en ese momento, se la da al que tiene menos (a igual cantidad, al primero por nombre) y recién entonces pasa a la siguiente, volviendo a contar con la solicitud recién asignada incluida. Cada solicitud queda en `ASIGNADA`. Al terminar se muestra un resumen (cuántas recibió cada técnico) y la tabla se recarga. Si no hay técnicos activos no asigna nada y avisa; si no hay solicitudes sin técnico, también lo avisa. No toca las solicitudes que ya tienen técnico (para cambiarlo se usa el selector de la fila).
 - Si el cambio de estado se hace desde el selector de estado de la tabla, la tabla no se recarga en ese momento: la carga de los técnicos se corrige en la próxima recarga (al asignar, buscar o refrescar).
 
 ### 3. Nueva solicitud
@@ -267,6 +268,7 @@ Todas las rutas requieren sesión iniciada, salvo `/login.html`, `/login`, `/sty
 | `POST` | `/api/solicitudes` | Registra una solicitud | `ADMINISTRADOR`, `ATENCION` |
 | `PUT` | `/api/solicitudes/{id}/estado` | Cambia el estado manualmente | `ADMINISTRADOR`, `ATENCION` |
 | `POST` | `/api/solicitudes/{id}/asignar` | Asigna un técnico | `ADMINISTRADOR`, `ATENCION` |
+| `POST` | `/api/solicitudes/autoasignar` | Asigna, de una en una, todas las solicitudes sin técnico, cada una al técnico activo con menos pendientes en ese momento (sin cuerpo). Responde `{"asignadas": n, "detalle": [{"numero": "...", "tecnico": "..."}]}`; 400 si no hay técnicos activos | `ADMINISTRADOR`, `ATENCION` |
 | `POST` | `/api/solicitudes/{id}/diagnostico` | Pasa a `EN DIAGNÓSTICO` (texto opcional) | `TECNICO` asignado |
 | `POST` | `/api/solicitudes/{id}/finalizar` | Finaliza la solicitud | `TECNICO` asignado |
 | `DELETE` | `/api/solicitudes/{id}` | Elimina la solicitud y su historial | `ADMINISTRADOR` |
@@ -328,7 +330,7 @@ export DB_PASSWORD="tu_contrasena"
 2. Iniciá sesión con uno de los usuarios de prueba.
 3. En el panel principal (`/index.html`) probá la búsqueda por documento y hacé clic en una fila para ver el detalle y el seguimiento.
 4. Con `ATENCION` o `ADMINISTRADOR`, entrá a **Nueva solicitud**, escribí el documento de un cliente, elegí uno de sus productos, revisá el estado de la garantía y abrí la factura de su compra con **Abrir factura** antes de registrar.
-5. Asigná un técnico desde la tabla (la lista muestra cuántas solicitudes pendientes tiene cada uno y ofrece primero a quien tiene menos); después iniciá sesión como `TECNICO`: solo verá las solicitudes que le asignaron, y puede actualizar su estado desde **Actualizar estado**.
+5. Asigná un técnico desde la tabla (la lista muestra cuántas solicitudes pendientes tiene cada uno y ofrece primero a quien tiene menos); después iniciá sesión como `TECNICO`: solo verá las solicitudes que le asignaron, y puede actualizar su estado desde **Actualizar estado**. Para probar la autoasignación, registrá varias solicitudes nuevas con `ATENCION` o `ADMINISTRADOR` y apretá **Autoasignar solicitudes**: se reparten entre los técnicos activos empezando por el que tiene menos pendientes; el resumen muestra cuántas recibió cada uno.
 6. Con `VENDEDOR` o `ADMINISTRADOR`, probá una venta desde el **Portal de Ventas**.
 7. Para probar el tiempo estimado, abrí el detalle de una solicitud `RECIBIDA` o `ASIGNADA`, copiá el link para el cliente y abrilo en otra ventana (sin sesión): verás la cuenta regresiva. Para una demostración, poné `ngo.atencion.plazo-minutos=2` y `ngo.atencion.reclamo-intervalo-minutos=1` en `application.properties` y reiniciá la aplicación: el link muestra la cuenta regresiva de 2 minutos y, al llegar a cero, aparece el botón **Reclamar atención** (después de enviarlo se puede reclamar de nuevo al minuto). Al enviarlo, la solicitud muestra el aviso **Reclamo del cliente** en el panel y el mensaje en su detalle.
 
@@ -358,6 +360,8 @@ export DB_PASSWORD="tu_contrasena"
 | Un técnico no ve una solicitud, o no ve el botón "Actualizar estado" | La solicitud no está asignada a ese técnico (o se reasignó a otro), o ya está `FINALIZADA`. |
 | El cliente no ve el botón para reclamar | La solicitud todavía está dentro del tiempo estimado, ya la está atendiendo un técnico (`EN DIAGNÓSTICO` o `FINALIZADA`), o el cliente ya reclamó hace menos de `ngo.atencion.reclamo-intervalo-minutos` minutos. |
 | Una solicitud antigua permite reclamar apenas se abre el link | Su fecha de creación ya superó el plazo y todavía espera a un técnico: el tiempo estimado se cuenta desde que se creó la solicitud. |
+| Al apretar **Autoasignar solicitudes** avisa que no hay técnicos activos | No existe ningún usuario con rol `TECNICO` en estado `ACTIVO`. Un `ADMINISTRADOR` puede crearlo o activarlo desde **Usuarios**. |
+| **Autoasignar solicitudes** avisa que no hay solicitudes sin técnico (y la tabla muestra solicitudes sin asignar) | El botón solo toma las solicitudes sin ninguna asignación que siguen en `RECIBIDA` o `ASIGNADA`; una solicitud ya `EN DIAGNÓSTICO` o `FINALIZADA` sin técnico no se toca. |
 | No se puede ejecutar `iniciar.ps1` | Política de ejecución de PowerShell: `Set-ExecutionPolicy -Scope Process RemoteSigned`. |
 
 ---
@@ -371,6 +375,7 @@ Prototipo académico con fines demostrativos, no preparado para producción. Lim
 - **Roles:** no se pueden administrar desde la interfaz; son los cuatro fijos del sistema.
 - **Productos:** solo se generan a partir de ventas con cliente; no hay pantalla para crearlos ni editarlos. Su número de serie es interno (`SN-XX-0000`), no el de fábrica.
 - **Artículos:** desde la interfaz solo se pueden dar de alta; no hay forma de ajustar el stock, editar o desactivar artículos.
+- **Autoasignación:** solo mira la cantidad de solicitudes pendientes de cada técnico; no considera el tipo de producto, la especialidad ni la antigüedad de cada pendiente. El bloqueo que evita asignar dos veces la misma solicitud si dos personas aprietan el botón a la vez funciona dentro de una sola instancia de la aplicación. Las asignaciones no quedan registradas en el seguimiento (igual que la asignación manual).
 - **Estados:** el cambio manual de estado hecho por `ADMINISTRADOR` o `ATENCION` no queda registrado en el seguimiento, y el backend no valida que el valor enviado sea uno de los cuatro estados oficiales.
 - **Reclamos:** el cliente solo puede enviarlos desde su link, y el personal los ve en el panel; no hay notificación al equipo ni forma de marcar un reclamo como respondido (el aviso se va solo cuando la solicitud pasa a `EN DIAGNÓSTICO`). Cualquiera que tenga el link puede reclamar, y lo único que limita la repetición es el tiempo mínimo entre reclamos de la misma solicitud.
 - **Tiempo estimado:** es un plazo fijo y único para todas las solicitudes, contado en tiempo corrido; no considera la carga de los técnicos, los fines de semana ni los horarios laborales. La cuenta regresiva de la página usa el reloj del navegador del cliente.
