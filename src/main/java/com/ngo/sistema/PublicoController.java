@@ -18,9 +18,9 @@ import java.util.Map;
  * adivinar el link de otro cliente probando números).
  *
  * Mientras la solicitud espera a un técnico (RECIBIDA o ASIGNADA) informa cuánto falta para que
- * la atiendan: el tiempo estimado se cuenta desde que se creó la solicitud y vence pasadas las
- * horas configuradas en ngo.atencion.plazo-horas. Si vence y nadie la atendió, el cliente puede
- * enviar un reclamo desde el mismo link (uno cada ngo.atencion.reclamo-intervalo-horas como mínimo).
+ * la atiendan: el tiempo estimado se cuenta desde que se creó la solicitud y vence pasados los
+ * minutos configurados en ngo.atencion.plazo-minutos. Si vence y nadie la atendió, el cliente puede
+ * enviar un reclamo desde el mismo link (uno cada ngo.atencion.reclamo-intervalo-minutos como mínimo).
  *
  * Solo se expone lo que le sirve al cliente: no se devuelven datos del cliente ni el nombre
  * del técnico o funcionario que atendió cada paso.
@@ -35,13 +35,13 @@ public class PublicoController {
 
     private static final int RECLAMO_MAX_CARACTERES = 500;
 
-    // Horas, desde que se crea la solicitud, que se estima que tarda un técnico en empezar a atenderla.
-    @Value("${ngo.atencion.plazo-horas:48}")
-    private long plazoHoras;
+    // Minutos, desde que se crea la solicitud, que se estima que tarda un técnico en empezar a atenderla.
+    @Value("${ngo.atencion.plazo-minutos:2880}")
+    private long plazoMinutos;
 
-    // Horas que tienen que pasar entre un reclamo y el siguiente sobre la misma solicitud.
-    @Value("${ngo.atencion.reclamo-intervalo-horas:12}")
-    private long reclamoIntervaloHoras;
+    // Minutos que tienen que pasar entre un reclamo y el siguiente sobre la misma solicitud.
+    @Value("${ngo.atencion.reclamo-intervalo-minutos:720}")
+    private long reclamoIntervaloMinutos;
 
     @Autowired
     private SolicitudRepository solicitudRepo;
@@ -150,7 +150,7 @@ public class PublicoController {
 
     /**
      * Arma lo que ve el cliente de una solicitud. La espera de atención solo corre mientras la solicitud
-     * está en un estado de ESTADOS_EN_ESPERA: el tiempo estimado vence "plazoHoras" después de su creación
+     * está en un estado de ESTADOS_EN_ESPERA: el tiempo estimado vence "plazoMinutos" después de su creación
      * y, una vez vencido, el cliente puede reclamar si pasó el tiempo mínimo desde su último reclamo.
      */
     private EstadoSolicitud armarRespuesta(Solicitud solicitud) {
@@ -160,14 +160,14 @@ public class PublicoController {
                 .toList();
 
         LocalDateTime ahora = LocalDateTime.now();
-        LocalDateTime limite = solicitud.getFecha() != null ? solicitud.getFecha().plusHours(plazoHoras) : null;
+        LocalDateTime limite = solicitud.getFecha() != null ? solicitud.getFecha().plusMinutes(plazoMinutos) : null;
         boolean esperando = limite != null && ESTADOS_EN_ESPERA.contains(solicitud.getEstadoActual());
         boolean vencido = esperando && !ahora.isBefore(limite);
         long segundosRestantes = esperando && !vencido ? Duration.between(ahora, limite).getSeconds() : 0;
 
         Reclamo ultimo = reclamoRepo
                 .findFirstBySolicitudIdSolicitudOrderByIdReclamoDesc(solicitud.getIdSolicitud()).orElse(null);
-        LocalDateTime desde = ultimo != null ? ultimo.getFecha().plusHours(reclamoIntervaloHoras) : null;
+        LocalDateTime desde = ultimo != null ? ultimo.getFecha().plusMinutes(reclamoIntervaloMinutos) : null;
         boolean puedeReclamar = vencido && (desde == null || !ahora.isBefore(desde));
 
         return new EstadoSolicitud(

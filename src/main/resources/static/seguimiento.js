@@ -14,7 +14,7 @@ const ESTADOS_MAP = {
 };
 
 // Cuenta regresiva de la espera: instante (según el reloj de esta página) en que vence el
-// tiempo estimado, y temporizador que refresca el texto cada 15 segundos.
+// tiempo estimado, y temporizador que refresca el texto cada segundo.
 let vencimientoMs = null;
 let temporizadorEspera = null;
 
@@ -140,7 +140,7 @@ function dibujarEspera(solicitud) {
 
         vencimientoMs = Date.now() + solicitud.segundosRestantes * 1000;
         actualizarCuentaRegresiva(limite);
-        temporizadorEspera = setInterval(() => actualizarCuentaRegresiva(limite), 15000);
+        temporizadorEspera = setInterval(() => actualizarCuentaRegresiva(limite), 1000);
         return;
     }
 

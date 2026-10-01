@@ -103,9 +103,9 @@ La garantía **no se guarda aparte**: se calcula siempre a partir de la fecha de
 #### Tiempo estimado de atención y reclamo
 
 - Mientras la solicitud espera a un técnico (`RECIBIDA` o `ASIGNADA`), la página pública muestra cuánto falta para que empiecen a atenderla, con una cuenta regresiva y la fecha estimada. La atención empieza cuando el técnico la pasa a `EN DIAGNÓSTICO`; desde ese momento el recuadro desaparece.
-- El tiempo estimado se cuenta desde la creación de la solicitud y vence pasadas las horas configuradas en `ngo.atencion.plazo-horas` (48 por defecto). Las horas son corridas (se cuentan las 24 horas, sin descontar fines de semana ni horarios laborales) y el plazo es el mismo para todas las solicitudes.
+- El tiempo estimado se cuenta desde la creación de la solicitud y vence pasados los minutos configurados en `ngo.atencion.plazo-minutos` (2880, o sea 48 horas, por defecto). El tiempo es corrido (se cuentan las 24 horas, sin descontar fines de semana ni horarios laborales) y el plazo es el mismo para todas las solicitudes.
 - Si el plazo vence y la solicitud sigue sin atención, la página ofrece el botón **Reclamar atención**, con un mensaje opcional de hasta 500 caracteres. Cada reclamo se guarda en la tabla `reclamo` (entidad `Reclamo`) y lo ve el personal en el panel (ver más arriba).
-- Entre un reclamo y el siguiente sobre la misma solicitud tienen que pasar al menos las horas de `ngo.atencion.reclamo-intervalo-horas` (12 por defecto). Mientras tanto la página confirma que el reclamo fue recibido e indica desde cuándo se puede enviar otro.
+- Entre un reclamo y el siguiente sobre la misma solicitud tienen que pasar al menos los minutos de `ngo.atencion.reclamo-intervalo-minutos` (720, o sea 12 horas, por defecto). Mientras tanto la página confirma que el reclamo fue recibido e indica desde cuándo se puede enviar otro.
 - Todas las reglas (que la solicitud siga en espera, que el plazo haya vencido y que haya pasado el intervalo) las valida el servidor, no solo la página. Para reclamar no hace falta usuario ni contraseña: alcanza con el link de la solicitud.
 
 ---
@@ -333,7 +333,7 @@ export DB_PASSWORD="tu_contrasena"
 4. Con `ATENCION` o `ADMINISTRADOR`, entrá a **Nueva solicitud**, escribí el documento de un cliente, elegí uno de sus productos, revisá el estado de la garantía y abrí la factura de su compra con **Abrir factura** antes de registrar.
 5. Asigná un técnico desde la tabla (la lista muestra cuántas solicitudes pendientes tiene cada uno y ofrece primero a quien tiene menos); después iniciá sesión como `TECNICO`: solo verá las solicitudes que le asignaron, y puede actualizar su estado desde **Actualizar estado**.
 6. Con `VENDEDOR` o `ADMINISTRADOR`, probá una venta desde el **Portal de Ventas**.
-7. Para probar el tiempo estimado, abrí el detalle de una solicitud `RECIBIDA` o `ASIGNADA`, copiá el link para el cliente y abrilo en otra ventana (sin sesión): verás la cuenta regresiva. Para ver el reclamo sin esperar, bajá `ngo.atencion.plazo-horas` a `0` en `application.properties`, reiniciá la aplicación y reabrí el link: aparece el botón **Reclamar atención**. Al enviarlo, la solicitud muestra el aviso **Reclamo del cliente** en el panel y el mensaje en su detalle.
+7. Para probar el tiempo estimado, abrí el detalle de una solicitud `RECIBIDA` o `ASIGNADA`, copiá el link para el cliente y abrilo en otra ventana (sin sesión): verás la cuenta regresiva. Para una demostración, poné `ngo.atencion.plazo-minutos=2` y `ngo.atencion.reclamo-intervalo-minutos=1` en `application.properties` y reiniciá la aplicación: el link muestra la cuenta regresiva de 2 minutos y, al llegar a cero, aparece el botón **Reclamar atención** (después de enviarlo se puede reclamar de nuevo al minuto). Al enviarlo, la solicitud muestra el aviso **Reclamo del cliente** en el panel y el mensaje en su detalle.
 
 ---
 
@@ -342,7 +342,7 @@ export DB_PASSWORD="tu_contrasena"
 - **Reiniciar tras cada cambio:** Maven copia los archivos estáticos al arrancar, así que cualquier cambio en `src/` requiere reiniciar la aplicación. Después, recargá el navegador con `Ctrl + F5`.
 - **Logs:** la terminal muestra solo errores críticos. Si algo falla (por ejemplo, un error de PostgreSQL al guardar o eliminar), el detalle aparece ahí.
 - **Tests:** por ahora solo existe `SistemaApplicationTests` (`contextLoads`).
-- **Tiempo de atención:** `ngo.atencion.plazo-horas` (horas hasta que vence el tiempo estimado, 48 por defecto) y `ngo.atencion.reclamo-intervalo-horas` (horas mínimas entre dos reclamos de una misma solicitud, 12 por defecto) se cambian en `application.properties`. El plazo se evalúa con la fecha de creación de cada solicitud, así que un cambio vale también para las ya existentes.
+- **Tiempo de atención:** `ngo.atencion.plazo-minutos` (minutos hasta que vence el tiempo estimado, 2880 por defecto) y `ngo.atencion.reclamo-intervalo-minutos` (minutos mínimos entre dos reclamos de una misma solicitud, 720 por defecto) se cambian en `application.properties`. El plazo se evalúa con la fecha de creación de cada solicitud, así que un cambio vale también para las ya existentes.
 
 ---
 
@@ -359,7 +359,7 @@ export DB_PASSWORD="tu_contrasena"
 | El panel carga vacío | Todavía no hay solicitudes: se crean desde **Nueva solicitud**. Un `TECNICO` solo ve las que tiene asignadas, así que también lo verá vacío si todavía no le asignaron ninguna. |
 | En Nueva solicitud aparece "No se encontró la factura de este producto en el sistema" | El producto no tiene una venta asociada. Los generados por el Portal de Ventas y los de ejemplo sí la tienen. |
 | Un técnico no ve una solicitud, o no ve el botón "Actualizar estado" | La solicitud no está asignada a ese técnico (o se reasignó a otro), o ya está `FINALIZADA`. |
-| El cliente no ve el botón para reclamar | La solicitud todavía está dentro del tiempo estimado, ya la está atendiendo un técnico (`EN DIAGNÓSTICO` o `FINALIZADA`), o el cliente ya reclamó hace menos de `ngo.atencion.reclamo-intervalo-horas` horas. |
+| El cliente no ve el botón para reclamar | La solicitud todavía está dentro del tiempo estimado, ya la está atendiendo un técnico (`EN DIAGNÓSTICO` o `FINALIZADA`), o el cliente ya reclamó hace menos de `ngo.atencion.reclamo-intervalo-minutos` minutos. |
 | Una solicitud antigua permite reclamar apenas se abre el link | Su fecha de creación ya superó el plazo y todavía espera a un técnico: el tiempo estimado se cuenta desde que se creó la solicitud. |
 | No se puede ejecutar `iniciar.ps1` | Política de ejecución de PowerShell: `Set-ExecutionPolicy -Scope Process RemoteSigned`. |
 
@@ -376,5 +376,5 @@ Prototipo académico con fines demostrativos, no preparado para producción. Lim
 - **Artículos:** desde la interfaz solo se pueden dar de alta; no hay forma de ajustar el stock, editar o desactivar artículos.
 - **Estados:** el cambio manual de estado hecho por `ADMINISTRADOR` o `ATENCION` no queda registrado en el seguimiento, y el backend no valida que el valor enviado sea uno de los cuatro estados oficiales.
 - **Reclamos:** el cliente solo puede enviarlos desde su link, y el personal los ve en el panel; no hay notificación al equipo ni forma de marcar un reclamo como respondido (el aviso se va solo cuando la solicitud pasa a `EN DIAGNÓSTICO`). Cualquiera que tenga el link puede reclamar, y lo único que limita la repetición es el tiempo mínimo entre reclamos de la misma solicitud.
-- **Tiempo estimado:** es un plazo fijo y único para todas las solicitudes, contado en horas corridas; no considera la carga de los técnicos, los fines de semana ni los horarios laborales. La cuenta regresiva de la página usa el reloj del navegador del cliente.
+- **Tiempo estimado:** es un plazo fijo y único para todas las solicitudes, contado en tiempo corrido; no considera la carga de los técnicos, los fines de semana ni los horarios laborales. La cuenta regresiva de la página usa el reloj del navegador del cliente.
 - **Datos de ejemplo:** el respaldo incluye usuarios de prueba; esas cuentas y sus contraseñas deben reemplazarse antes de cualquier uso real.
