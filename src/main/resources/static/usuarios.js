@@ -34,13 +34,24 @@ function filaDe(usuario) {
     tr.append(celda(usuario.nombre), celda(usuario.correo), celda(nombreDeRol(usuario.rol)), celda(usuario.estado));
 
     const tdAcciones = document.createElement('td');
+
     const btnClave = document.createElement('button');
     btnClave.type = 'button';
     btnClave.className = 'btn-primary';
-    btnClave.style.cssText = 'padding: 6px 12px; font-size: 14px;';
+    btnClave.style.cssText = 'padding: 6px 12px; font-size: 14px; margin-right: 6px;';
     btnClave.textContent = 'Cambiar contraseña';
     btnClave.addEventListener('click', () => abrirModalClave(usuario));
-    tdAcciones.append(btnClave);
+
+    // Un usuario INACTIVO no puede iniciar sesión (ver Usuario#estado / UsuarioPrincipal#isEnabled)
+    const activo = usuario.estado === 'ACTIVO';
+    const btnEstado = document.createElement('button');
+    btnEstado.type = 'button';
+    btnEstado.className = 'btn-primary';
+    btnEstado.style.cssText = 'padding: 6px 12px; font-size: 14px;' + (activo ? ' background-color: #c53030;' : '');
+    btnEstado.textContent = activo ? 'Desactivar' : 'Activar';
+    btnEstado.addEventListener('click', () => cambiarEstadoUsuario(usuario, btnEstado));
+
+    tdAcciones.append(btnClave, btnEstado);
     tr.append(tdAcciones);
 
     return tr;
@@ -193,5 +204,45 @@ document.getElementById('clave-form').addEventListener('submit', async function(
         boton.disabled = false;
     }
 });
+
+// ---------- Activar / desactivar ----------
+
+async function cambiarEstadoUsuario(usuario, boton) {
+    const activando = usuario.estado !== 'ACTIVO';
+    if (!activando) {
+        const confirmado = confirm(
+            `¿Desactivar a ${usuario.nombre}?\n\n` +
+            'No va a poder iniciar sesión hasta que lo vuelvas a activar.'
+        );
+        if (!confirmado) return;
+    }
+
+    ocultarMensaje('mensaje-lista');
+    boton.disabled = true; // evita enviar dos veces el mismo cambio
+
+    try {
+        const res = await fetch(`/api/usuarios/${usuario.idUsuario}/estado`, { method: 'PUT' });
+
+        let datos = null;
+        try { datos = await res.json(); } catch (e) { /* la respuesta puede no traer JSON */ }
+
+        if (res.ok) {
+            mostrarMensaje(`${datos.nombre} ahora está ${datos.estado === 'ACTIVO' ? 'activo' : 'inactivo'}.`, false, 'mensaje-lista');
+            cargarUsuarios();
+        } else if (res.status === 403) {
+            mostrarMensaje('No tenés permiso para cambiar el estado de un usuario.', true, 'mensaje-lista');
+        } else if (res.status === 404) {
+            mostrarMensaje('El usuario ya no existe.', true, 'mensaje-lista');
+            cargarUsuarios();
+        } else {
+            mostrarMensaje((datos && datos.error) || 'No se pudo cambiar el estado del usuario.', true, 'mensaje-lista');
+        }
+    } catch (error) {
+        console.error('Error al cambiar el estado del usuario:', error);
+        mostrarMensaje('Error de conexión al cambiar el estado del usuario.', true, 'mensaje-lista');
+    } finally {
+        boton.disabled = false;
+    }
+}
 
 cargarUsuarios();

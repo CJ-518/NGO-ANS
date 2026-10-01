@@ -6,6 +6,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
@@ -127,6 +128,28 @@ public class UsuarioController {
         }
 
         usuario.setClave(passwordEncoder.encode(clave)); // se guarda cifrada con BCrypt
+        usuario = usuarioRepo.save(usuario);
+
+        return ResponseEntity.ok(resumir(usuario));
+    }
+
+    /**
+     * Activa o desactiva el inicio de sesión de un usuario (alterna su estado entre ACTIVO e
+     * INACTIVO): un usuario INACTIVO no puede iniciar sesión (ver UsuarioPrincipal#isEnabled),
+     * pero sigue apareciendo en el historial de solicitudes, ventas, etc. Un administrador no
+     * puede cambiar su propio estado, para no dejarse sin acceso por error.
+     */
+    @PutMapping("/{id}/estado")
+    public ResponseEntity<?> cambiarEstado(@PathVariable Long id, @AuthenticationPrincipal UsuarioPrincipal principal) {
+        Usuario usuario = usuarioRepo.findById(id).orElse(null);
+        if (usuario == null) {
+            return error(HttpStatus.NOT_FOUND, "El usuario no existe.");
+        }
+        if (usuario.getIdUsuario().equals(principal.getUsuario().getIdUsuario())) {
+            return error(HttpStatus.CONFLICT, "No podés cambiar tu propio estado.");
+        }
+
+        usuario.setEstado("ACTIVO".equalsIgnoreCase(usuario.getEstado()) ? "INACTIVO" : "ACTIVO");
         usuario = usuarioRepo.save(usuario);
 
         return ResponseEntity.ok(resumir(usuario));
