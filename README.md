@@ -26,7 +26,7 @@ El sistema cubre dos líneas de negocio: **servicio técnico y garantías** (sol
 
 | Rol | Propósito principal | Permisos clave |
 | --- | --- | --- |
-| `ADMINISTRADOR` | Control total | Crea usuarios, elimina solicitudes, asigna técnicos, cambia estados, vende, da de alta artículos |
+| `ADMINISTRADOR` | Control total | Crea usuarios y los activa o desactiva, elimina solicitudes, asigna técnicos, cambia estados, vende, da de alta artículos |
 | `ATENCION` | Recepción y gestión operativa | Registra clientes y solicitudes, asigna técnicos, cambia el estado de las solicitudes y abre la factura de un producto al registrar una solicitud |
 | `TECNICO` | Atención técnica | Ve solo las solicitudes que tiene asignadas; sobre ellas registra diagnóstico y las finaliza |
 | `VENDEDOR` | Portal de ventas | Registra clientes y ventas, y consulta solo sus propias ventas |
@@ -40,7 +40,7 @@ Los permisos se aplican en dos niveles: `SecurityConfig` (reglas por ruta) y `@P
 ### 1. Login y sesión
 
 - Formulario de login con sesión HTTP; las contraseñas se guardan con BCrypt.
-- Solo pueden iniciar sesión los usuarios con `estado = 'ACTIVO'`.
+- Solo pueden iniciar sesión los usuarios con `estado = 'ACTIVO'`; un `ADMINISTRADOR` puede activar o desactivar usuarios desde **Usuarios** (ver módulo 6).
 - Después del login: `VENDEDOR` va al portal de ventas (`/portal-ventas.html`); el resto va al panel principal (`/index.html`).
 - Todas las pantallas internas muestran el nombre, el rol y un botón **Cerrar sesión** en el encabezado.
 
@@ -84,6 +84,7 @@ La garantía **no se guarda aparte**: se calcula siempre a partir de la fecha de
 - Permite crear usuarios con rol `ATENCION`, `TECNICO` o `VENDEDOR`.
 - El correo debe ser único y la contraseña (mínimo 8 caracteres) se guarda cifrada.
 - Cada fila de la tabla tiene el botón **Cambiar contraseña**: el administrador escribe la contraseña nueva (dos veces) y se guarda cifrada, **sin necesidad de conocer la actual**. Sirve para cualquier usuario, incluidos otros administradores y el propio. Se aplican las mismas reglas que en el alta (8 a 72 bytes). Las sesiones que el usuario ya tenía abiertas siguen vigentes hasta que cierre sesión; la contraseña nueva se exige en su próximo inicio de sesión.
+- Cada fila también tiene el botón **Desactivar** (o **Activar**, si el usuario ya está inactivo). Un usuario `INACTIVO` no puede iniciar sesión y deja de aparecer en la lista de técnicos para asignar solicitudes, pero se conserva en el historial de solicitudes, ventas y seguimiento. Desactivar pide confirmación; activar no. Un administrador **no puede cambiar su propio estado**, para no quedarse sin acceso por error. Las sesiones que el usuario ya tenía abiertas siguen vigentes hasta que cierre sesión; la desactivación se aplica en su próximo inicio de sesión.
 
 ### 7. Factura de venta en PDF
 
@@ -273,6 +274,7 @@ Todas las rutas requieren sesión iniciada, salvo `/login.html`, `/login`, `/sty
 | `GET` | `/api/usuarios` | Lista de usuarios | `ADMINISTRADOR` |
 | `POST` | `/api/usuarios` | Crea un usuario (`ATENCION`, `TECNICO` o `VENDEDOR`) | `ADMINISTRADOR` |
 | `PUT` | `/api/usuarios/{id}/clave` | Cambia la contraseña de un usuario sin pedir la actual. Cuerpo: `{"clave": "..."}` (8 a 72 bytes). 404 si el usuario no existe | `ADMINISTRADOR` |
+| `PUT` | `/api/usuarios/{id}/estado` | Alterna el estado del usuario entre `ACTIVO` e `INACTIVO` (sin cuerpo). Responde con el usuario actualizado; 404 si no existe, 409 si es el propio administrador | `ADMINISTRADOR` |
 | `GET` | `/api/articulos` | Catálogo de artículos activos | autenticado |
 | `POST` | `/api/articulos` | Alta de artículo | `ADMINISTRADOR` |
 | `GET` | `/api/ventas` | Ventas (todas para el administrador, solo las propias para el vendedor) | `VENDEDOR`, `ADMINISTRADOR` |
@@ -348,7 +350,7 @@ export DB_PASSWORD="tu_contrasena"
 | `FATAL: password authentication failed` | Usuario o contraseña de PostgreSQL incorrectos en `DB_USER` / `DB_PASSWORD`. |
 | `database "ngo_saeca" does not exist` | Falta crear la base local con ese nombre exacto. |
 | `Port 8080 was already in use` | Otro proceso ocupa el puerto; cerralo o cambiá `server.port` en `application.properties`. |
-| "Correo o contraseña incorrectos" | El correo no existe, la contraseña no coincide o el usuario no está activo. |
+| "Correo o contraseña incorrectos" | El correo no existe, la contraseña no coincide o el usuario está inactivo. Un `ADMINISTRADOR` puede reactivarlo desde **Usuarios → Activar**. |
 | No recuerdo la contraseña de un usuario | Un `ADMINISTRADOR` la cambia desde **Usuarios → Cambiar contraseña** (no pide la actual). |
 | Entro, pero no puedo crear, cambiar el estado o eliminar | El rol del usuario no permite esa acción. Los nombres de rol válidos son `ADMINISTRADOR`, `ATENCION`, `TECNICO` y `VENDEDOR`. |
 | El panel carga vacío | Todavía no hay solicitudes: se crean desde **Nueva solicitud**. Un `TECNICO` solo ve las que tiene asignadas, así que también lo verá vacío si todavía no le asignaron ninguna. |
@@ -365,7 +367,7 @@ export DB_PASSWORD="tu_contrasena"
 Prototipo académico con fines demostrativos, no preparado para producción. Limitaciones conocidas:
 
 - **Seguridad:** la protección CSRF está desactivada (la API solo la consume el propio frontend); debe reactivarse antes de cualquier despliegue real.
-- **Usuarios:** el administrador puede crearlos y cambiar la contraseña de cualquiera desde la interfaz, pero todavía no hay forma de editarlos ni desactivarlos. Cambiar una contraseña no cierra las sesiones que el usuario ya tenía abiertas.
+- **Usuarios:** el administrador puede crearlos, cambiar la contraseña de cualquiera y activarlos o desactivarlos desde la interfaz, pero todavía no hay forma de editar sus datos (nombre, correo, rol) ni de eliminarlos. Cambiar una contraseña o desactivar a un usuario no cierra las sesiones que ya tenía abiertas.
 - **Roles:** no se pueden administrar desde la interfaz; son los cuatro fijos del sistema.
 - **Productos:** solo se generan a partir de ventas con cliente; no hay pantalla para crearlos ni editarlos. Su número de serie es interno (`SN-XX-0000`), no el de fábrica.
 - **Artículos:** desde la interfaz solo se pueden dar de alta; no hay forma de ajustar el stock, editar o desactivar artículos.
