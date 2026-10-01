@@ -139,8 +139,7 @@ La garantía **no se guarda aparte**: se calcula siempre a partir de la fecha de
 ````text
 NGO-ANS/
 ├── db/
-│   ├── ngo_ans.sql
-│   └── reclamo.sql
+│   └── ngo_ans.sql
 ├── src/
 │   ├── main/
 │   │   ├── java/com/ngo/sistema/
@@ -216,13 +215,9 @@ createdb -U postgres ngo_saeca
 psql -U postgres -d ngo_saeca -f db/ngo_ans.sql
 ````
 
-El usuario y la contraseña no están en el repositorio: se pasan con las variables de entorno `DB_USER` (por defecto `postgres`) y `DB_PASSWORD`. Si ya tenías la base cargada de antes, ejecutá una sola vez `db/migracion-orden-ventas.sql` para que los números de venta queden en orden cronológico.
+El usuario y la contraseña no están en el repositorio: se pasan con las variables de entorno `DB_USER` (por defecto `postgres`) y `DB_PASSWORD`.
 
-La tabla `reclamo` (reclamos de los clientes por la demora en la atención) no está en `ngo_ans.sql`. Con `spring.jpa.hibernate.ddl-auto=update` Hibernate la crea sola al arrancar la aplicación; si preferís crearla a mano, `db/reclamo.sql` la crea y se puede ejecutar más de una vez sin problema:
-
-````bash
-psql -U postgres -d ngo_saeca -f db/reclamo.sql
-````
+La tabla `reclamo` (reclamos de los clientes por la demora en la atención) no hace falta crearla a mano: con `spring.jpa.hibernate.ddl-auto=update`, Hibernate la crea sola al arrancar la aplicación.
 
 ---
 
