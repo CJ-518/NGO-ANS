@@ -49,6 +49,8 @@ public class SecurityConfig {
                 // Seguimiento público de una solicitud (link sin usuario, para el cliente)
                 .requestMatchers("/seguimiento.html", "/seguimiento.js").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/publico/**").permitAll()
+                // Reclamo del cliente por la demora en la atención (mismo link, sin usuario)
+                .requestMatchers(HttpMethod.POST, "/api/publico/seguimiento/*/reclamo").permitAll()
 
                 // Sólo ADMINISTRADOR puede eliminar solicitudes o administrar usuarios/roles
                 .requestMatchers(HttpMethod.DELETE, "/api/solicitudes/**").hasRole("ADMINISTRADOR")

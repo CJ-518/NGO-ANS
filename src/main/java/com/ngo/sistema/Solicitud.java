@@ -73,8 +73,8 @@ public class Solicitud {
         }
     }
 
-    // Al eliminar una solicitud se eliminan también sus asignaciones y su seguimiento
-    // (las FK de la base de datos no tienen ON DELETE CASCADE). No se exponen en el JSON.
+    // Al eliminar una solicitud se eliminan también sus asignaciones, su seguimiento y los reclamos
+    // del cliente (las FK de la base de datos no tienen ON DELETE CASCADE). No se exponen en el JSON.
     @JsonIgnore
     @OneToMany(mappedBy = "solicitud", cascade = CascadeType.REMOVE)
     private List<Asignacion> asignaciones = new ArrayList<>();
@@ -82,6 +82,10 @@ public class Solicitud {
     @JsonIgnore
     @OneToMany(mappedBy = "solicitud", cascade = CascadeType.REMOVE)
     private List<Seguimiento> seguimientos = new ArrayList<>();
+
+    @JsonIgnore
+    @OneToMany(mappedBy = "solicitud", cascade = CascadeType.REMOVE)
+    private List<Reclamo> reclamos = new ArrayList<>();
 
     // Getters and Setters
     public Long getIdSolicitud() { return idSolicitud; }
@@ -122,5 +126,17 @@ public class Solicitud {
                         "idUsuario", a.getUsuario().getIdUsuario(),
                         "nombre", a.getUsuario().getNombre()))
                 .orElse(null);
+    }
+
+    // Reclamos que envió el cliente desde el link público, del más antiguo al más reciente. Solo se lee:
+    // se envía al frontend como "reclamosCliente": [ { fecha, mensaje } ], o una lista vacía si nunca reclamó.
+    @JsonProperty(value = "reclamosCliente", access = JsonProperty.Access.READ_ONLY)
+    public List<Map<String, Object>> getReclamosCliente() {
+        return reclamos.stream()
+                .sorted(Comparator.comparing(Reclamo::getIdReclamo))
+                .map(r -> Map.<String, Object>of(
+                        "fecha", r.getFecha(),
+                        "mensaje", r.getMensaje() != null ? r.getMensaje() : ""))
+                .toList();
     }
 }

@@ -1,6 +1,6 @@
 // Lógica del panel principal (index.html): listado de solicitudes, búsqueda por documento,
-// detalle con línea de tiempo y seguimiento, asignación de técnicos, cambio de estado y
-// eliminación. Qué botones y columnas se ven depende del rol del usuario logueado.
+// detalle con línea de tiempo, seguimiento y reclamos del cliente, asignación de técnicos,
+// cambio de estado y eliminación. Qué botones y columnas se ven depende del rol del usuario logueado.
 
 // Estado de la página: rol e id del usuario logueado (los completa cargarUsuarioActual).
 let rolActual = null;
@@ -249,6 +249,36 @@ function dibujarRegistro(registro) {
 }
 
 /**
+ * Muestra en el detalle los reclamos que el cliente envió desde su link de seguimiento (fecha y mensaje).
+ * Si no hay ninguno, oculta la sección. Usa textContent para que el mensaje nunca se interprete como HTML.
+ * @param {{fecha: string, mensaje: string}[]} reclamos
+ */
+function dibujarReclamos(reclamos) {
+    const caja = document.getElementById('detalle-reclamos-caja');
+    if (!reclamos || reclamos.length === 0) {
+        caja.style.display = 'none';
+        return;
+    }
+
+    const bloques = reclamos.map(reclamo => {
+        const bloque = document.createElement('div');
+        bloque.style.cssText = 'padding: 8px 0; border-bottom: 1px solid #e2e8f0;';
+
+        const cabecera = document.createElement('strong');
+        cabecera.textContent = new Date(reclamo.fecha).toLocaleString('es-PY');
+
+        const texto = document.createElement('div');
+        texto.textContent = reclamo.mensaje || 'Sin mensaje.';
+        texto.style.cssText = 'margin-top: 4px; white-space: pre-wrap; color: #2d3748;';
+
+        bloque.append(cabecera, texto);
+        return bloque;
+    });
+    document.getElementById('detalle-reclamos').replaceChildren(...bloques);
+    caja.style.display = 'block';
+}
+
+/**
  * Carga el historial de la solicitud (GET /api/solicitudes/{id}/seguimiento) en el detalle.
  */
 async function cargarSeguimiento(id) {
@@ -420,6 +450,7 @@ async function abrirDetalle(id) {
             `${solicitud.producto.marca} ${solicitud.producto.modelo} (SN: ${solicitud.producto.nroSerie})`;
         document.getElementById('detalle-descripcion').textContent = solicitud.descripcion;
         codigoPublicoActual = solicitud.codigoPublico;
+        dibujarReclamos(solicitud.reclamosCliente);
 
         // Línea de tiempo
         const modal = document.getElementById('modal-detalle');
@@ -541,6 +572,15 @@ async function cargarSolicitudes(documento = '') {
                         : `<span style="color: #718096;">Sin asignar</span>`;
                 }
 
+                // Aviso de reclamo: el cliente reclamó porque pasó el tiempo estimado y la solicitud todavía
+                // espera a un técnico (RECIBIDA o ASIGNADA). Va en la celda del estado y no en la del número,
+                // porque numeroDeFila() toma el número de solicitud del texto de la primera celda.
+                const cantidadReclamos = (solicitud.reclamosCliente || []).length;
+                const hayReclamo = cantidadReclamos > 0 && ['RECIBIDA', 'ASIGNADA'].includes(solicitud.estadoActual);
+                const reclamoHtml = hayReclamo
+                    ? `<div style="margin-top: 6px;"><span title="El cliente reclamó la demora en la atención" style="display: inline-block; padding: 2px 6px; border: 1px solid #ed8936; border-radius: 4px; background-color: #fffaf0; color: #7b341e; font-size: 12px; font-weight: bold;">Reclamo del cliente${cantidadReclamos > 1 ? ` (${cantidadReclamos})` : ''}</span></div>`
+                    : '';
+
                 // Columna Acciones: el ADMINISTRADOR elimina; el TECNICO actualiza el estado de SUS solicitudes
                 // (asignadas a él y todavía no finalizadas); el rol ATENCION no tiene columna.
                 let celdaAcciones = '';
@@ -562,7 +602,7 @@ async function cargarSolicitudes(documento = '') {
                     <td>${solicitud.cliente.documento}</td>
                     <td>${solicitud.producto.tipoProducto}</td>
                     <td>${tecnicoHtml}</td>
-                    <td>${estadoHtml}</td>
+                    <td>${estadoHtml}${reclamoHtml}</td>
                     <td>${date}</td>
                     ${celdaAcciones}
                 </tr>`;

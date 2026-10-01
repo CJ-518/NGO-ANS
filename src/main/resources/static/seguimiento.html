@@ -55,6 +55,21 @@
                 </div>
             </div>
 
+            <!-- Tiempo estimado de atención y reclamo (solo mientras la solicitud espera a un técnico) -->
+            <div id="espera-caja" style="display: none;">
+                <strong id="espera-titulo"></strong>
+                <p id="espera-texto" style="margin: 8px 0 0 0;"></p>
+
+                <div id="reclamo-formulario" style="display: none; margin-top: 15px;">
+                    <label for="reclamo-mensaje">Mensaje (opcional)</label>
+                    <textarea id="reclamo-mensaje" rows="3" maxlength="500"></textarea>
+
+                    <div id="reclamo-error" style="display: none; margin-top: 10px; padding: 10px 12px; border-radius: 4px; background-color: #fed7d7; color: #742a2a;"></div>
+
+                    <button type="button" id="reclamo-enviar" class="btn-primary" style="margin-top: 10px;">Reclamar atención</button>
+                </div>
+            </div>
+
             <h3>Detalles</h3>
             <table>
                 <tbody>

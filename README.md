@@ -2,7 +2,7 @@
 
 Sistema interno de gestión para NGO SAECA, desarrollado como aplicación web full-stack con Java, Spring Boot y PostgreSQL. Combina un backend REST protegido con Spring Security y un frontend estático en HTML, CSS y JavaScript.
 
-El sistema cubre dos líneas de negocio: **servicio técnico y garantías** (solicitudes, asignación de técnicos, diagnóstico y seguimiento) y **ventas** (catálogo con stock y registro de ventas). Los permisos y el flujo de trabajo se definen por roles y se validan en el backend.
+El sistema cubre dos líneas de negocio: **servicio técnico y garantías** (solicitudes, asignación de técnicos, diagnóstico, seguimiento y reclamos por demora) y **ventas** (catálogo con stock y registro de ventas). Los permisos y el flujo de trabajo se definen por roles y se validan en el backend.
 
 ---
 
@@ -48,9 +48,10 @@ Los permisos se aplican en dos niveles: `SecurityConfig` (reglas por ruta) y `@P
 
 - Tabla de solicitudes con número, cliente, documento, producto, técnico, estado y fecha. `ADMINISTRADOR` y `ATENCION` ven todas; el `TECNICO` ve solo las que tiene asignadas (y el contador **Solicitudes abiertas** cuenta únicamente esas).
 - Búsqueda por número de documento del cliente (coincidencia parcial).
-- Al hacer clic en una solicitud se abre su detalle, con el historial de seguimiento (diagnósticos y cierre).
+- Al hacer clic en una solicitud se abre su detalle, con el historial de seguimiento (diagnósticos y cierre) y, si el cliente reclamó la demora, la lista de sus reclamos con fecha y mensaje.
+- Si el cliente reclamó y su solicitud todavía espera a un técnico (`RECIBIDA` o `ASIGNADA`), la celda del estado muestra el aviso **Reclamo del cliente** (con la cantidad si fueron varios). El aviso desaparece cuando la solicitud pasa a `EN DIAGNÓSTICO`.
 - La columna **Acciones** depende del rol:
-  - `ADMINISTRADOR`: botón **Eliminar** (borra también sus asignaciones y su seguimiento).
+  - `ADMINISTRADOR`: botón **Eliminar** (borra también sus asignaciones, su seguimiento y sus reclamos).
   - `TECNICO`: botón **Actualizar estado** en las solicitudes que tiene asignadas y no están finalizadas.
   - `ATENCION`: no tiene columna de acciones (asigna y cambia el estado desde los selectores de la tabla).
 - `ADMINISTRADOR` y `ATENCION` pueden asignar un técnico y cambiar el estado desde selectores en la propia tabla.
@@ -99,6 +100,14 @@ La garantía **no se guarda aparte**: se calcula siempre a partir de la fecha de
 - `seguimiento.html` es una página pública (sin usuario ni contraseña) que consulta `GET /api/publico/seguimiento/{codigo}` y muestra el estado actual de la solicitud con una línea de tiempo y el historial de diagnósticos.
 - Se usa el código aleatorio (no el id secuencial) para que no se pueda adivinar el link de otro cliente probando números, y la respuesta no expone datos del cliente ni el nombre de quién atendió cada paso.
 
+#### Tiempo estimado de atención y reclamo
+
+- Mientras la solicitud espera a un técnico (`RECIBIDA` o `ASIGNADA`), la página pública muestra cuánto falta para que empiecen a atenderla, con una cuenta regresiva y la fecha estimada. La atención empieza cuando el técnico la pasa a `EN DIAGNÓSTICO`; desde ese momento el recuadro desaparece.
+- El tiempo estimado se cuenta desde la creación de la solicitud y vence pasadas las horas configuradas en `ngo.atencion.plazo-horas` (48 por defecto). Las horas son corridas (se cuentan las 24 horas, sin descontar fines de semana ni horarios laborales) y el plazo es el mismo para todas las solicitudes.
+- Si el plazo vence y la solicitud sigue sin atención, la página ofrece el botón **Reclamar atención**, con un mensaje opcional de hasta 500 caracteres. Cada reclamo se guarda en la tabla `reclamo` (entidad `Reclamo`) y lo ve el personal en el panel (ver más arriba).
+- Entre un reclamo y el siguiente sobre la misma solicitud tienen que pasar al menos las horas de `ngo.atencion.reclamo-intervalo-horas` (12 por defecto). Mientras tanto la página confirma que el reclamo fue recibido e indica desde cuándo se puede enviar otro.
+- Todas las reglas (que la solicitud siga en espera, que el plazo haya vencido y que haya pasado el intervalo) las valida el servidor, no solo la página. Para reclamar no hace falta usuario ni contraseña: alcanza con el link de la solicitud.
+
 ---
 
 ## Flujo de estados de una solicitud
@@ -109,6 +118,7 @@ La garantía **no se guarda aparte**: se calcula siempre a partir de la fecha de
 - Al asignar o reasignar un técnico pasa a `ASIGNADA`. Una solicitud `FINALIZADA` no se reabre.
 - El técnico asignado la pasa a `EN DIAGNÓSTICO` (con un texto de diagnóstico opcional, máximo 2000 caracteres) o a `FINALIZADA`. Cada uno de esos cambios queda registrado en `seguimiento`.
 - `ADMINISTRADOR` y `ATENCION` también pueden cambiar el estado manualmente desde el panel; ese cambio **no** genera registro de seguimiento.
+- Mientras la solicitud está en `RECIBIDA` o `ASIGNADA` se considera que espera atención: es la etapa en que corre el tiempo estimado y en que el cliente puede reclamar si se vence.
 
 ---
 
@@ -119,6 +129,8 @@ La garantía **no se guarda aparte**: se calcula siempre a partir de la fecha de
 - **Artículo:** un tipo de mercadería del catálogo de ventas, con precio y stock. No es lo mismo que un producto: cada unidad vendida a un cliente se convierte en un producto.
 - **Solicitud:** pedido de servicio técnico de un cliente sobre uno de sus productos. Se le asigna un técnico y avanza por los estados del flujo.
 - **Seguimiento:** registro de los diagnósticos y del cierre que hace el técnico en cada solicitud.
+- **Tiempo estimado de atención:** plazo, contado desde que se crea la solicitud, en el que se espera que un técnico empiece a atenderla. Se configura en `application.properties`.
+- **Reclamo:** aviso que envía el cliente desde su link de seguimiento cuando pasó el tiempo estimado y su solicitud sigue sin atención.
 
 ---
 
@@ -127,7 +139,8 @@ La garantía **no se guarda aparte**: se calcula siempre a partir de la fecha de
 ````text
 NGO-ANS/
 ├── db/
-│   └── ngo_ans.sql
+│   ├── ngo_ans.sql
+│   └── reclamo.sql
 ├── src/
 │   ├── main/
 │   │   ├── java/com/ngo/sistema/
@@ -144,6 +157,8 @@ NGO-ANS/
 │   │   │   ├── Producto.java
 │   │   │   ├── ProductoRepository.java
 │   │   │   ├── PublicoController.java
+│   │   │   ├── Reclamo.java
+│   │   │   ├── ReclamoRepository.java
 │   │   │   ├── Rol.java
 │   │   │   ├── RolRepository.java
 │   │   │   ├── SecurityConfig.java
@@ -203,6 +218,12 @@ psql -U postgres -d ngo_saeca -f db/ngo_ans.sql
 
 El usuario y la contraseña no están en el repositorio: se pasan con las variables de entorno `DB_USER` (por defecto `postgres`) y `DB_PASSWORD`. Si ya tenías la base cargada de antes, ejecutá una sola vez `db/migracion-orden-ventas.sql` para que los números de venta queden en orden cronológico.
 
+La tabla `reclamo` (reclamos de los clientes por la demora en la atención) no está en `ngo_ans.sql`. Con `spring.jpa.hibernate.ddl-auto=update` Hibernate la crea sola al arrancar la aplicación; si preferís crearla a mano, `db/reclamo.sql` la crea y se puede ejecutar más de una vez sin problema:
+
+````bash
+psql -U postgres -d ngo_saeca -f db/reclamo.sql
+````
+
 ---
 
 ## Datos de ejemplo y usuarios de prueba
@@ -231,7 +252,7 @@ Los productos de ejemplo figuran como vendidos, y cada uno tiene su venta con su
 
 ## API REST
 
-Todas las rutas requieren sesión iniciada, salvo `/login.html`, `/login`, `/style.css`, `/seguimiento.html`, `/seguimiento.js` y `GET /api/publico/**`.
+Todas las rutas requieren sesión iniciada, salvo `/login.html`, `/login`, `/style.css`, `/seguimiento.html`, `/seguimiento.js`, `GET /api/publico/**` y `POST /api/publico/seguimiento/{codigo}/reclamo`.
 
 | Método | Ruta | Descripción | Acceso |
 | ------ | ---- | ----------- | ------ |
@@ -262,7 +283,8 @@ Todas las rutas requieren sesión iniciada, salvo `/login.html`, `/login`, `/sty
 | `GET` | `/api/ventas` | Ventas (todas para el administrador, solo las propias para el vendedor) | `VENDEDOR`, `ADMINISTRADOR` |
 | `POST` | `/api/ventas` | Registra una venta y descuenta stock | `VENDEDOR`, `ADMINISTRADOR` |
 | `GET` | `/api/ventas/{id}/factura` | Factura simple en PDF de la venta (`?abrir=true` la muestra en el navegador en vez de descargarla) | `VENDEDOR` (propia), `ADMINISTRADOR` y `ATENCION` (cualquiera) |
-| `GET` | `/api/publico/seguimiento/{codigo}` | Estado y seguimiento de una solicitud por su `codigoPublico`, sin datos del cliente | público (sin login) |
+| `GET` | `/api/publico/seguimiento/{codigo}` | Estado y seguimiento de una solicitud por su `codigoPublico`, sin datos del cliente. Incluye la espera de atención: `esperandoAtencion`, `fechaLimiteAtencion`, `segundosRestantes`, `plazoVencido`, `puedeReclamar`, `ultimoReclamo` y `proximoReclamo` | público (sin login) |
+| `POST` | `/api/publico/seguimiento/{codigo}/reclamo` | Registra un reclamo del cliente por la demora. Cuerpo opcional: `{"mensaje": "..."}` (hasta 500 caracteres). Responde con el estado actualizado; 400 si el mensaje es muy largo, 404 si el código no existe, 409 si la solicitud ya fue atendida o todavía está dentro del plazo, 429 si el último reclamo es muy reciente | público (sin login) |
 
 Autenticación de Spring Security: `POST /login` y `POST /logout`.
 
@@ -311,6 +333,7 @@ export DB_PASSWORD="tu_contrasena"
 4. Con `ATENCION` o `ADMINISTRADOR`, entrá a **Nueva solicitud**, escribí el documento de un cliente, elegí uno de sus productos, revisá el estado de la garantía y abrí la factura de su compra con **Abrir factura** antes de registrar.
 5. Asigná un técnico desde la tabla (la lista muestra cuántas solicitudes pendientes tiene cada uno y ofrece primero a quien tiene menos); después iniciá sesión como `TECNICO`: solo verá las solicitudes que le asignaron, y puede actualizar su estado desde **Actualizar estado**.
 6. Con `VENDEDOR` o `ADMINISTRADOR`, probá una venta desde el **Portal de Ventas**.
+7. Para probar el tiempo estimado, abrí el detalle de una solicitud `RECIBIDA` o `ASIGNADA`, copiá el link para el cliente y abrilo en otra ventana (sin sesión): verás la cuenta regresiva. Para ver el reclamo sin esperar, bajá `ngo.atencion.plazo-horas` a `0` en `application.properties`, reiniciá la aplicación y reabrí el link: aparece el botón **Reclamar atención**. Al enviarlo, la solicitud muestra el aviso **Reclamo del cliente** en el panel y el mensaje en su detalle.
 
 ---
 
@@ -319,6 +342,7 @@ export DB_PASSWORD="tu_contrasena"
 - **Reiniciar tras cada cambio:** Maven copia los archivos estáticos al arrancar, así que cualquier cambio en `src/` requiere reiniciar la aplicación. Después, recargá el navegador con `Ctrl + F5`.
 - **Logs:** la terminal muestra solo errores críticos. Si algo falla (por ejemplo, un error de PostgreSQL al guardar o eliminar), el detalle aparece ahí.
 - **Tests:** por ahora solo existe `SistemaApplicationTests` (`contextLoads`).
+- **Tiempo de atención:** `ngo.atencion.plazo-horas` (horas hasta que vence el tiempo estimado, 48 por defecto) y `ngo.atencion.reclamo-intervalo-horas` (horas mínimas entre dos reclamos de una misma solicitud, 12 por defecto) se cambian en `application.properties`. El plazo se evalúa con la fecha de creación de cada solicitud, así que un cambio vale también para las ya existentes.
 
 ---
 
@@ -335,6 +359,8 @@ export DB_PASSWORD="tu_contrasena"
 | El panel carga vacío | Todavía no hay solicitudes: se crean desde **Nueva solicitud**. Un `TECNICO` solo ve las que tiene asignadas, así que también lo verá vacío si todavía no le asignaron ninguna. |
 | En Nueva solicitud aparece "No se encontró la factura de este producto en el sistema" | El producto no tiene una venta asociada. Los generados por el Portal de Ventas y los de ejemplo sí la tienen. |
 | Un técnico no ve una solicitud, o no ve el botón "Actualizar estado" | La solicitud no está asignada a ese técnico (o se reasignó a otro), o ya está `FINALIZADA`. |
+| El cliente no ve el botón para reclamar | La solicitud todavía está dentro del tiempo estimado, ya la está atendiendo un técnico (`EN DIAGNÓSTICO` o `FINALIZADA`), o el cliente ya reclamó hace menos de `ngo.atencion.reclamo-intervalo-horas` horas. |
+| Una solicitud antigua permite reclamar apenas se abre el link | Su fecha de creación ya superó el plazo y todavía espera a un técnico: el tiempo estimado se cuenta desde que se creó la solicitud. |
 | No se puede ejecutar `iniciar.ps1` | Política de ejecución de PowerShell: `Set-ExecutionPolicy -Scope Process RemoteSigned`. |
 
 ---
@@ -349,4 +375,6 @@ Prototipo académico con fines demostrativos, no preparado para producción. Lim
 - **Productos:** solo se generan a partir de ventas con cliente; no hay pantalla para crearlos ni editarlos. Su número de serie es interno (`SN-XX-0000`), no el de fábrica.
 - **Artículos:** desde la interfaz solo se pueden dar de alta; no hay forma de ajustar el stock, editar o desactivar artículos.
 - **Estados:** el cambio manual de estado hecho por `ADMINISTRADOR` o `ATENCION` no queda registrado en el seguimiento, y el backend no valida que el valor enviado sea uno de los cuatro estados oficiales.
+- **Reclamos:** el cliente solo puede enviarlos desde su link, y el personal los ve en el panel; no hay notificación al equipo ni forma de marcar un reclamo como respondido (el aviso se va solo cuando la solicitud pasa a `EN DIAGNÓSTICO`). Cualquiera que tenga el link puede reclamar, y lo único que limita la repetición es el tiempo mínimo entre reclamos de la misma solicitud.
+- **Tiempo estimado:** es un plazo fijo y único para todas las solicitudes, contado en horas corridas; no considera la carga de los técnicos, los fines de semana ni los horarios laborales. La cuenta regresiva de la página usa el reloj del navegador del cliente.
 - **Datos de ejemplo:** el respaldo incluye usuarios de prueba; esas cuentas y sus contraseñas deben reemplazarse antes de cualquier uso real.
