@@ -49,9 +49,10 @@
             <artifactId>spring-boot-starter-security</artifactId>
         </dependency>
 
+        <!-- Base de datos embebida (archivo local): reemplaza a PostgreSQL para el release portable -->
         <dependency>
-            <groupId>org.postgresql</groupId>
-            <artifactId>postgresql</artifactId>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
             <scope>runtime</scope>
         </dependency>
 
@@ -85,6 +86,7 @@
     </dependencies>
 
     <build>
+        <finalName>ngo-saeca</finalName>
         <plugins>
             <plugin>
                 <groupId>org.springframework.boot</groupId>
