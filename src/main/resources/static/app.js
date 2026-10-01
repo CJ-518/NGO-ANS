@@ -41,6 +41,12 @@ async function cargarUsuarioActual() {
             btnVentas.style.display = 'inline-block';
         }
 
+        // Autoasignar solicitudes: lo usan quienes pueden asignar técnicos (ADMINISTRADOR y ATENCION).
+        const btnAutoasignar = document.getElementById('btn-autoasignar');
+        if (btnAutoasignar && (rolActual === 'ADMINISTRADOR' || rolActual === 'ATENCION')) {
+            btnAutoasignar.style.display = 'inline-block';
+        }
+
         // La columna "Acciones" tiene botones solo para el ADMINISTRADOR (Eliminar) y el TECNICO
         // (Actualizar estado). Para el rol ATENCION no se muestra.
         const thAcciones = document.getElementById('th-acciones');
@@ -102,6 +108,9 @@ document.addEventListener('DOMContentLoaded', async () => {
             cerrarAvance();
         }
     });
+
+    // Autoasignar: reparte las solicitudes sin técnico, de a una, al técnico con menos pendientes
+    document.getElementById('btn-autoasignar').addEventListener('click', autoasignarSolicitudes);
 
     // Copiar el link público de seguimiento (para pasárselo al cliente)
     document.getElementById('btn-copiar-link').addEventListener('click', copiarLinkSeguimiento);
@@ -349,6 +358,54 @@ async function asignarTecnico(idSolicitud, idTecnico) {
     }
 
     // Se recarga la tabla: refleja el técnico asignado y el nuevo estado (RECIBIDA pasa a ASIGNADA)
+    cargarSolicitudes(filtro);
+}
+
+/**
+ * Autoasigna todas las solicitudes que no tienen técnico (POST /api/solicitudes/autoasignar).
+ * El servidor las asigna de a una: a cada solicitud le corresponde el técnico que en ese momento tiene
+ * menos pendientes, y las cantidades se recalculan antes de asignar la siguiente. Al terminar se
+ * muestra un resumen y se recarga la tabla (con los técnicos y sus cantidades actualizadas).
+ */
+async function autoasignarSolicitudes() {
+    const boton = document.getElementById('btn-autoasignar');
+    const filtro = document.getElementById('buscar-documento').value;
+    boton.disabled = true; // evita enviar dos veces
+
+    try {
+        const response = await fetch('/api/solicitudes/autoasignar', { method: 'POST' });
+
+        if (response.ok) {
+            const resultado = await response.json();
+            if (resultado.asignadas === 0) {
+                alert('No hay solicitudes sin técnico para asignar.');
+            } else {
+                // Resumen: cuántas solicitudes recibió cada técnico
+                const porTecnico = {};
+                resultado.detalle.forEach(d => {
+                    porTecnico[d.tecnico] = (porTecnico[d.tecnico] || 0) + 1;
+                });
+                const lineas = Object.entries(porTecnico)
+                    .map(([nombre, cantidad]) => `• ${nombre}: ${cantidad}`)
+                    .join('\n');
+                alert(`Se asignaron ${resultado.asignadas} ${resultado.asignadas === 1 ? 'solicitud' : 'solicitudes'}:\n\n${lineas}`);
+            }
+        } else {
+            let mensaje = 'No se pudieron autoasignar las solicitudes.';
+            if (response.status === 403) {
+                mensaje = 'No tenés permiso para asignar técnicos.';
+            } else {
+                try { mensaje = (await response.json()).error || mensaje; } catch (e) { /* sin JSON */ }
+            }
+            alert(mensaje);
+        }
+    } catch (error) {
+        console.error('Error autoasignando las solicitudes:', error);
+        alert('Error de conexión al autoasignar las solicitudes.');
+    } finally {
+        boton.disabled = false;
+    }
+
     cargarSolicitudes(filtro);
 }
 

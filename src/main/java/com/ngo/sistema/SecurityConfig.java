@@ -77,6 +77,8 @@ public class SecurityConfig {
 
                 // Asignar técnico: ADMINISTRADOR o ATENCION
                 .requestMatchers(HttpMethod.POST, "/api/solicitudes/*/asignar").hasAnyRole("ADMINISTRADOR", "ATENCION")
+                // Autoasignar todas las solicitudes sin técnico: ADMINISTRADOR o ATENCION
+                .requestMatchers(HttpMethod.POST, "/api/solicitudes/autoasignar").hasAnyRole("ADMINISTRADOR", "ATENCION")
 
                 // Registrar diagnóstico y finalizar: solo el TECNICO (el controlador además exige que
                 // la solicitud esté asignada a ese técnico)
