@@ -87,7 +87,7 @@ Reiniciá el programa para que tome los cambios. También se puede mover la carp
 | `Port 8080 was already in use` | Otro programa usa ese puerto. Cerralo o cambiá `server.port` en `config\application.properties`. |
 | `Database may be already in use` | Hay otra copia del programa abierta sobre la misma carpeta `data/`. Cerrala. |
 | El navegador no se abre | Entrá a mano a <http://localhost:8080>. El navegador se abre 10 segundos después de iniciar; en equipos lentos puede tardar más. |
-| "Correo o contraseña incorrectos" | El correo no existe, la contraseña no coincide o el usuario no está activo. Un `ADMINISTRADOR` puede cambiar la contraseña desde **Usuarios → Cambiar contraseña**. |
+| "Correo o contraseña incorrectos" | El correo no existe, la contraseña no coincide o el usuario está inactivo. Un `ADMINISTRADOR` puede cambiar la contraseña desde **Usuarios → Cambiar contraseña**, o reactivar al usuario desde **Usuarios → Activar**. |
 | Quiero empezar de cero | Cerrá el programa y borrá la carpeta `data/`. |
 
 Para el resto de los síntomas del sistema (permisos por rol, facturas, reclamos, etc.) mirá la sección de solución de problemas del [README de `main`](../main/README.md#solución-de-problemas).
