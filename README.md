@@ -8,7 +8,7 @@ Para qué sirve cada módulo (solicitudes, garantías, ventas, roles) mirá el [
 
 ## Descarga y uso rápido
 
-1. Entrá a la sección [**Releases**](../../releases) y descargá `NGO-SAECA.zip` de la versión más reciente con sufijo `-portable`.
+1. Entrá a la sección [**Releases**](../../releases) y descargá `NGO-SAECA.zip` de la versión más reciente.
 2. Descomprimilo en cualquier carpeta (por ejemplo `C:\NGO-SAECA`).
 3. Doble clic en **`iniciar.bat`**.
 4. Se abre el navegador en <http://localhost:8080>. Si no se abre solo, entrá a esa dirección a mano.
